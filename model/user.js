@@ -4,9 +4,10 @@ const mysqlOptions = require('../config/mysqlOptions');
 const pool = mysql.createPool(mysqlOptions);
 
 module.exports.createUser = function(regTime, username, password, nickname, sex, birthday, email) {
+  const sql = `INSERT INTO user (regTime, username, password, nickname, sex, birthday, email) 
+    VALUES ('${regTime}', '${username}', '${password}', '${nickname}', ${sex}, '${birthday}', '${email}')`;
   return new Promise(function(resolve, reject) {
-    pool.query(`INSERT INTO user (regTime, username, password, nickname, sex, birthday, email) 
-      VALUES ('${regTime}', '${username}', '${password}', '${nickname}', ${sex}, '${birthday}', '${email}')`, function(err, result) {
+    pool.query(sql, function(err, result) {
         if(err) {
             return reject(err);
         }
@@ -16,8 +17,9 @@ module.exports.createUser = function(regTime, username, password, nickname, sex,
 };
 
 module.exports.getUserPassword = function(username) {
+  const sql = `SELECT password FROM user WHERE username = '${username}'`;
   return new Promise(function(resolve, reject) {
-    pool.query(`SELECT password FROM user WHERE username = '${username}'`, function(err, result) {
+    pool.query(sql, function(err, result) {
         if(err) {
             return reject(err);
         }
@@ -27,8 +29,9 @@ module.exports.getUserPassword = function(username) {
 };
 
 module.exports.getUserInfo = function(username) {
+  const sql = `SELECT userId,regTime,nickname,sex,birthday,email FROM user WHERE username = '${username}'`;
   return new Promise(function(resolve, reject) {
-    pool.query(`SELECT userId,regTime,nickname,sex,birthday,email FROM user WHERE username = '${username}'`, function(err, result) {
+    pool.query(sql, function(err, result) {
         if(err) {
             return reject(err);
         }

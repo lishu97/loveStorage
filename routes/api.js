@@ -58,16 +58,22 @@ router.post('/sign_in', function(req, res, next) {
   } else {
     // 检验用户名与密码是否匹配
     user.getUserPassword(username)
-      .then(password => {
-        if(password !== sqlPassword) {
+      .then(sqlPassword => {
+        if(sqlPassword.length === 0) {
+          // 登录失败
+          return res.send(utils.buildResData('用户名不存在', { code: 1 }));
+        } else if(password !== sqlPassword[0].password) {
           // 登录失败
           return res.send(utils.buildResData('用户名或密码错误', { code: 1 }));
         } else {
-          console.log(1)
           // 登录成功
           user.getUserInfo(username)
-            .then(info => {
-              console.log(info);
+            .then(userInfo => {
+              // 转换时间格式
+              userInfo[0].birthday = utils.formatDate(userInfo[0].birthday).date;
+              userInfo[0].regTime = `${utils.formatDate(userInfo[0].regTime).date} ${utils.formatDate(userInfo[0].regTime).time}`;
+              // 返回登录用户信息到前端
+              return res.send(utils.buildResData('登录成功', { code: 0, ...userInfo[0] }));
             })
             .catch(err => utils.sqlErr(err, res));
         }

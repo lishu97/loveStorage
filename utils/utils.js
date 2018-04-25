@@ -1,22 +1,18 @@
 const STATUS_CODE = require('./status');
+const moment = require('moment')
 
-function formatNumber(n) {
-  const num = Number.parseInt(n);
-  if(num < 0 || num > 59) {
-    return 'error';
-  }
-  if(num < 10) {
-    return '0' + num;
-  }
-  return `${num}`;
+module.exports.formatDate = (date) => {
+  date = moment(date).format('YYYY-MM-DD');
+  time = moment(date).format('HH:mm:ss');
+  return {date, time}
 }
 module.exports.getDate = () => {
-  const date = new Date();
-  return `${date.getFullYear()}-${formatNumber(date.getMonth() + 1)}-${formatNumber(date.getDate())}`;
+  const date = moment(new Date()).format('YYYY-MM-DD');
+  return date;
 }
 module.exports.getTime = () => {
-  const date = new Date();
-  return `${formatNumber(date.getHours())}:${formatNumber(date.getMinutes())}:${formatNumber(date.getSeconds())}`;
+  const time = moment(new Date()).format('HH:mm:ss');
+  return time;
 }
 module.exports.buildResData = buildResData = function (msg, data) {
     let res = {};
