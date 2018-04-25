@@ -82,4 +82,21 @@ router.post('/sign_in', function(req, res, next) {
   }
 });
 
+/* 
+  查询情侣信息
+*/
+router.get('/lover', function(req, res, next) {
+  // 获取数据
+  const { userId } = req.body;
+  // 检验数据
+  if(!userId) {
+    return res.send(utils.buildResData('参数错误', { code: 1 }));
+  } else {
+    // 检验该用户是否有绑定的情侣
+    user.getUserPassword(username)
+      .then()
+      .catch(err => utils.sqlErr(err, res));
+  }
+});
+
 module.exports = router;
