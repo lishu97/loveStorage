@@ -5,8 +5,8 @@ const pool = mysql.createPool(mysqlOptions);
 
 // 查询userId当前是否有关系
 module.exports.getCurrentRelation = function(userId) {
-  const sql = `SELECT relationId,relationStartTime,relationStopTime FROM relation 
-    WHERE (userId1=${userId} OR userId2=${userId}) AND relationEndTime IS NULL`;
+  const sql = `SELECT * FROM relation 
+    WHERE (userId1=${userId} OR userId2=${userId}) AND relationStopTime IS NULL`;
   return new Promise(function(resolve, reject) {
     pool.query(sql, function(err, result) {
       if(err) {

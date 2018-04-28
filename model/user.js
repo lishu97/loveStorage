@@ -28,8 +28,20 @@ module.exports.getUserPassword = function(username) {
   });
 };
 
-module.exports.getUserInfo = function(username) {
+module.exports.getUserInfoByUsername = function(username) {
   const sql = `SELECT userId,regTime,nickname,sex,birthday,email FROM user WHERE username = '${username}'`;
+  return new Promise(function(resolve, reject) {
+    pool.query(sql, function(err, result) {
+        if(err) {
+            return reject(err);
+        }
+        return resolve(result);
+    });
+  });
+};
+
+module.exports.getUserInfoByUserId = function(userId) {
+  const sql = `SELECT userId,regTime,nickname,sex,birthday,email FROM user WHERE userId = '${userId}'`;
   return new Promise(function(resolve, reject) {
     pool.query(sql, function(err, result) {
         if(err) {

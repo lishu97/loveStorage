@@ -1,8 +1,10 @@
 var express = require('express');
+var url = require('url');
 var router = express.Router();
 
 var utils = require('../utils/utils');
 var user = require('../model/user');
+var relation = require('../model/relation')
 const STATUS_CODE = require('../utils/status');
 const REG_EXP = require('../utils/regexp');
 
@@ -19,7 +21,7 @@ router.post('/sign_up', (req, res, next) => {
     return res.send(utils.buildResData('密码不符合规范', { code: 1 }));
   } else {
     // 检验用户名是否重复
-    user.getUserInfo(username)
+    user.getUserInfoByUsername(username)
       .then(userInfo => {
         if(userInfo.length) {
           return res.send(utils.buildResData('用户名已存在', { code: 1 }));
@@ -67,11 +69,9 @@ router.post('/sign_in', function(req, res, next) {
           return res.send(utils.buildResData('用户名或密码错误', { code: 1 }));
         } else {
           // 登录成功
-          user.getUserInfo(username)
+          user.getUserInfoByUsername(username)
             .then(userInfo => {
-              // 转换时间格式
-              userInfo[0].birthday = utils.formatDate(userInfo[0].birthday).date;
-              userInfo[0].regTime = `${utils.formatDate(userInfo[0].regTime).date} ${utils.formatDate(userInfo[0].regTime).time}`;
+              userInfo = utils.formatInfo(userInfo);
               // 返回登录用户信息到前端
               return res.send(utils.buildResData('登录成功', { code: 0, ...userInfo[0] }));
             })
@@ -87,16 +87,39 @@ router.post('/sign_in', function(req, res, next) {
 */
 router.get('/lover', function(req, res, next) {
   // 获取数据
-  const { userId } = req.body;
+  let { userId } = url.parse(req.url, true).query;
+  userId = Number(userId);
   // 检验数据
-  if(!userId) {
-    return res.send(utils.buildResData('参数错误', { code: 1 }));
+  if((!Number.isInteger(userId)) || (userId < 0)) {
+    return res.send(utils.buildResData('参数不合法', { code: 1 }));
   } else {
     // 检验该用户是否有绑定的情侣
-    user.getUserPassword(username)
-      .then()
+    relation.getCurrentRelation(userId)
+      .then(relation => {
+        if(relation.length === 0){
+          // 当前无绑定情侣
+          res.send(utils.buildResData('该用户当前未绑定情侣 || 不存在该用户', { code: 0, lover:{} }));
+        } else {
+          // 当前关系信息在relation[0]中
+          const { userId1, userId2 } = relation[0];
+          let loverId = '';
+          if(Number(userId1) === Number(userId)) {
+            loverId = userId2;
+          } else {
+            loverId = userId1;
+          }
+          // 根据情侣ID获取信息
+          user.getUserInfoByUserId(loverId)
+            .then(loverInfo => {
+              loverInfo = utils.formatInfo(loverInfo);
+              res.send(utils.buildResData('当前已绑定情侣', { code: 0, lover:{...loverInfo[0]} }));
+            })
+            .catch(err => utils.sqlErr(err, res))
+        }
+      })
       .catch(err => utils.sqlErr(err, res));
   }
 });
+
 
 module.exports = router;
