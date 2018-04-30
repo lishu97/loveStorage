@@ -85,7 +85,7 @@ router.post('/sign_in', function(req, res, next) {
 /* 
   查询情侣信息
 */
-router.get('/lover', function(req, res, next) {
+router.get('/get_lover_info', function(req, res, next) {
   // 获取数据
   let { userId } = url.parse(req.url, true).query;
   userId = Number(userId);
@@ -120,6 +120,79 @@ router.get('/lover', function(req, res, next) {
       .catch(err => utils.sqlErr(err, res));
   }
 });
+
+/* 
+  绑定/解除情侣
+*/
+router.post('/update_relation', function(req, res, next) {
+  // 获取数据
+  let { userId1, userId2,  operation } = req.body;
+  userId1 = Number(userId1);
+  userId2 = Number(userId2);
+  // 检验数据
+  if((!Number.isInteger(userId1)) || (userId1 < 0)) {
+    return res.send(utils.buildResData('userId1不合法', { code: 1 }));
+  } else if((!Number.isInteger(userId2)) || (userId2 < 0)){
+    return res.send(utils.buildResData('userId2不合法', { code: 1 }));
+  } else if(!(operation === 'start' || operation === 'stop')) {
+    return res.send(utils.buildResData('operation不合法', { code: 1 }));
+  } else {
+    
+    if(operation === 'start') {
+      // 绑定
+      relation.getCurrentRelation(userId1)
+        .then(relationInfo1 => {
+          // 检验userID1当前是否已绑定情侣
+          if(relationInfo1.length && !relationInfo1[0].relationStopTime) {
+            return res.send(utils.buildResData('userId1已绑定情侣', { code: 1 }));
+          } else {
+            relation.getCurrentRelation(userId2)
+              .then(relationInfo2 => {
+                // 检验userID2当前是否已绑定情侣
+                if(relationInfo2.length && !relationInfo2[0].relationStopTime) {
+                  return res.send(utils.buildResData('userId2已绑定情侣', { code: 1 }));
+                } else {
+                  // 绑定操作
+                  relation.updateRelation(userId1, userId2)
+                    .then(result => {
+                      if(result.affectedRows === 1) {
+                        res.send(utils.buildResData('绑定操作成功', { code: 0 , date: { userId1, userId2 } }));
+                      } else {
+                        res.send(utils.buildResData(`绑定操作失败，造成原因：不存在这样的关系 || 这段关系已经被启动}`, { code: 1 , date: { userId1, userId2 } }));
+                      }
+                    })
+                    .catch(err => utils.sqlErr(err, res));
+                }
+              })
+              .catch(err => utils.sqlErr(err, res));
+          }
+        })
+        .catch(err => utils.sqlErr(err, res));
+    } else {
+      // 解绑
+      relation.getRelation(userId1, userId2)
+        .then(relationInfo => {
+          if(!relationInfo[0]) {
+            return res.send(utils.buildResData('userId1与userId2非情侣，不需要解除关系', { code: 1 }));
+          } else {
+            // 解除绑定
+            const time = `${utils.getDate()} ${utils.getTime()}`;
+            relation.updateRelation(userId1, userId2, time)
+              .then(result => {
+                if(result.affectedRows === 1) {
+                  res.send(utils.buildResData('解绑操作成功', { code: 0 , date: { userId1, userId2, time } }));
+                } else {
+                  res.send(utils.buildResData(`解绑操作失败，造成原因：不存在这样的关系 || 这段关系已经被中止}`, { code: 1 , date: { userId1, userId2, time } }));
+                }
+              })
+              .catch(err => utils.sqlErr(err, res));
+          }
+        })
+        .catch(err => utils.sqlErr(err, res));   
+    }
+  }
+});
+
 
 
 module.exports = router;

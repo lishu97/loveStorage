@@ -6,7 +6,7 @@ const pool = mysql.createPool(mysqlOptions);
 // 查询userId当前是否有关系
 module.exports.getCurrentRelation = function(userId) {
   const sql = `SELECT * FROM relation 
-    WHERE (userId1=${userId} OR userId2=${userId}) AND relationStopTime IS NULL`;
+    WHERE (userId1='${userId}' OR userId2='${userId}') AND relationStopTime IS NULL`;
   return new Promise(function(resolve, reject) {
     pool.query(sql, function(err, result) {
       if(err) {
@@ -20,7 +20,7 @@ module.exports.getCurrentRelation = function(userId) {
 // 查询userId1与userId2的关系
 module.exports.getRelation = function(userId1, userId2) {
   const sql = `SELECT relationId,relationStartTime,relationStopTime FROM relation 
-    WHERE (userId1=${userId1} AND userId2=${userId2}) OR (userId1=${userId2} AND userId2=${userId1})`;
+    WHERE (userId1='${userId1}' AND userId2='${userId2}') OR (userId1='${userId2}' AND userId2='${userId1}')`;
   return new Promise(function(resolve, reject) {
     pool.query(sql, function(err, result) {
       if(err) {
@@ -33,7 +33,7 @@ module.exports.getRelation = function(userId1, userId2) {
 
 // 查询userId的所有关系
 module.exports.getRelations = function(userId) {
-  const sql = `SELECT userId1,userId2 FROM relation WHERE userId1=${userId} OR userId2=${userId}`;
+  const sql = `SELECT userId1,userId2 FROM relation WHERE userId1='${userId}' OR userId2='${userId}'`;
   return new Promise(function(resolve, reject) {
     pool.query(sql, function(err, result) {
       if(err) {
@@ -46,7 +46,7 @@ module.exports.getRelations = function(userId) {
 
 // 查询关系中userId1和userId2字段
 module.exports.getRelationUserId = function(userId) {
-  const sql = `SELECT userId1,userId2 FROM relation WHERE userId1=${userId} OR userId2=${userId}`;
+  const sql = `SELECT userId1,userId2 FROM relation WHERE userId1='${userId}' OR userId2='${userId}'`;
   return new Promise(function(resolve, reject) {
     pool.query(sql, function(err, result) {
       if(err) {
@@ -71,10 +71,16 @@ module.exports.startRelation = function(userId1, userId2, relationStartTime) {
   });
 };
 
-// 重启userId1与userId2的关系
-module.exports.restartRelation = function(userId1, userId2) {
-  const sql = `UPDATE relation SET relationStopTime=NULL 
-    WHERE ((userId1=${userId1} AND userId2=${userId2}) OR (userId1=${userId2} AND userId2=${userId1})) AND (relationEndTime IS NOT NULL)`;
+// 重启/关闭userId1与userId2的关系
+module.exports.updateRelation = function(userId1, userId2, time) {
+  let sql = ''
+  if(time) {
+    sql = `UPDATE relation SET relationStopTime='${time}'
+      WHERE ((userId1='${userId1}' AND userId2='${userId2}') OR (userId1='${userId2}' AND userId2='${userId1}')) AND (relationStopTime IS NULL)`;
+  } else {
+    sql = `UPDATE relation SET relationStopTime=NULL
+      WHERE ((userId1='${userId1}' AND userId2='${userId2}') OR (userId1='${userId2}' AND userId2='${userId1}')) AND (relationStopTime IS NOT NULL)`;
+  }
   return new Promise(function(resolve, reject) {
     pool.query(sql, function(err, result) {
       if(err) {
@@ -88,7 +94,7 @@ module.exports.restartRelation = function(userId1, userId2) {
 // 关闭userId1与userId2的关系
 module.exports.stopRelation = function(userId1, userId2) {
   const sql = `UPDATE relation SET relationStopTime=NULL 
-    WHERE ((userId1=${userId1} AND userId2=${userId2}) OR (userId1=${userId2} AND userId2=${userId1})) AND (relationEndTime IS NOT NULL)`;
+    WHERE ((userId1='${userId1}' AND userId2='${userId2}') OR (userId1='${userId2}' AND userId2='${userId1}')) AND (relationEndTime IS NOT NULL)`;
   return new Promise(function(resolve, reject) {
     pool.query(sql, function(err, result) {
       if(err) {

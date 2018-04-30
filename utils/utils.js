@@ -33,6 +33,11 @@ module.exports.buildResData = buildResData = function (msg, data) {
 }
 
 module.exports.sqlErr = function(err, res) {
-  console.log(buildResData('数据库操作出错', { msg: err.sqlMessage }));
-  return res.send(buildResData('数据库操作出错', { code: 0 }));
+  if(err.sqlMessage) {
+    console.log(buildResData('数据库操作出错', err.sqlMessage));
+    return res.send(buildResData('数据库操作出错', { code: 0 }));
+  }
+  console.log(buildResData('代码出错', { msg: err.message, msg: err.stack }));
+  return res.send(buildResData('代码出错', { msg: err.message, msg: err.stack }));
+  
 };
