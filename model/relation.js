@@ -31,6 +31,19 @@ module.exports.getRelation = function(userId1, userId2) {
   });
 };
 
+// 通过relationId查询relation信息
+module.exports.getRelationById = function(relationId) {
+  const sql = `SELECT * FROM relation WHERE relationId=${relationId}`;
+  return new Promise(function(resolve, reject) {
+    pool.query(sql, function(err, result) {
+      if(err) {
+        return reject(err);
+      }
+      return resolve(result);
+    });
+  });
+};
+
 // 查询userId的所有关系
 module.exports.getRelations = function(userId) {
   const sql = `SELECT userId1,userId2 FROM relation WHERE userId1='${userId}' OR userId2='${userId}'`;
