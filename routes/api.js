@@ -4,7 +4,10 @@ var router = express.Router();
 
 var utils = require('../utils/utils');
 var user = require('../model/user');
-var relation = require('../model/relation')
+var relation = require('../model/relation');
+var status = require('../model/status');
+var plan = require('../model/plan');
+// var anniversary = require('../model/anniversary');
 const STATUS_CODE = require('../utils/status');
 const REG_EXP = require('../utils/regexp');
 
@@ -85,7 +88,7 @@ router.post('/sign_in', function(req, res, next) {
 /* 
   查询情侣信息
 */
-router.get('/get_lover_info', function(req, res, next) {
+router.get('/lover_info', function(req, res, next) {
   // 获取数据
   let { userId } = url.parse(req.url, true).query;
   userId = Number(userId);
@@ -193,6 +196,178 @@ router.post('/update_relation', function(req, res, next) {
   }
 });
 
+/* 
+  查询status
+*/
+router.get('/status', (req, res, next) => {
+  // 获取数据
+  let {userId, page} = url.parse(req.url, true).query;
+  const pageSize = 10;
+  userId = Number(userId);
+  page = Number(page);
+  // 检验数据
+  if((!Number.isInteger(userId)) || (userId < 0)) {
+    return res.send(utils.buildResData('userId不合法', { code: 1 }));
+  } else if((!Number.isInteger(page)) || (page < 0)) {
+    return res.send(utils.buildResData('page不合法', { code: 1 }));
+  } else {
+    const start = pageSize * page;
+    const end = pageSize * (page + 1);
+    // 获取status分页
+    status.getStatus(userId, start, end)
+    .then(statusInfo => {
+      if(statusInfo.length > 0) {
+        statusInfo = statusInfo.map(element => {
+          element.statusTime = `${utils.formatDate(element.statusTime).date} ${utils.formatDate(element.statusTime).time}`;
+          return element;
+        });
+        res.send(utils.buildResData(`获取userId=${userId}&page=${page}的status成功`, { code: 0, date:statusInfo }));
+      } else {
+        res.send(utils.buildResData(`没有数据`, { code: 0, date:statusInfo }));
+      }      
+    })
+    .catch(err => utils.sqlErr(err, res));
+  }
+});
 
+/* 
+  新增status
+*/
+router.post('/create_status', function(req, res, next) {
+  // 获取数据
+  let {userId, statusContent, statusTime} = req.body;
+  userId = Number(userId);
+  statusTime = new Date(statusTime);
+  // 检验数据
+  if(!Number.isInteger(userId) || userId < 0) {
+    return res.send(utils.buildResData('userId不符合规范', { code: 1 }));
+  } else if(!statusContent) {
+    return res.send(utils.buildResData('statusContent为空', { code: 1 }));
+  } else if(statusTime > new Date()){
+    return res.send(utils.buildResData('statusTime错误', { code: 1 }));
+  } else {
+    statusTime = `${utils.formatDate(statusTime).date} ${utils.formatDate(statusTime).time}`;
+    status.createStatus(userId, statusContent, statusTime)
+      .then(result => {
+        if(result.affectedRows === 1) {
+          return res.send(utils.buildResData('status创建完成', { code: 0, date: { userId, statusContent, statusTime } }));
+        } else {
+          return res.send(utils.buildResData('创建status时发生未知错误', { code: 1 }));
+        }
+      })
+      .catch(err => utils.sqlErr(err, res));
+  }
+});
+/* 
+  删除status
+*/
+router.post('/delete_status', function(req, res, next) {
+  // 获取数据
+  let {userId, statusId} = req.body;
+  userId = Number(userId);
+  statusId = Number(statusId);
+  // 检验数据
+  if(!Number.isInteger(userId) || userId < 0) {
+    return res.send(utils.buildResData('userId不符合规范', { code: 1 }));
+  } else if(!Number.isInteger(statusId) || statusId < 0) {
+    return res.send(utils.buildResData('statusId不符合规范', { code: 1 }));
+  } else {
+    status.deleteStatus(statusId, userId)
+      .then(result => {
+        if(result.affectedRows === 1) {
+          return res.send(utils.buildResData('status删除完成', { code: 0, date: { userId, statusId } }));
+        } else {
+          return res.send(utils.buildResData('不存在这条记录 || 这条记录已被删除', { code: 1 }));
+        }
+      })
+      .catch(err => utils.sqlErr(err, res));
+  }
+});
+/* 
+  查询plan
+*/
+router.get('/plan', (req, res, next) => {
+  // 获取数据
+  let {relationId, page} = url.parse(req.url, true).query;
+  const pageSize = 10;
+  relationId = Number(relationId);
+  page = Number(page);
+  // 检验数据
+  if((!Number.isInteger(relationId)) || (relationId < 0)) {
+    return res.send(utils.buildResData('relationId不合法', { code: 1 }));
+  } else if((!Number.isInteger(page)) || (page < 0)) {
+    return res.send(utils.buildResData('page不合法', { code: 1 }));
+  } else {
+    const start = pageSize * page;
+    const end = pageSize * (page + 1);
+    // 获取plan分页
+    plan.getPlan(relationId, start, end)
+      .then(planInfo => {
+        if(planInfo.length > 0) {
+          planInfo = planInfo.map(element => {
+            element.planTime = `${utils.formatDate(element.planTime).date} ${utils.formatDate(element.planTime).time}`;
+            return element;
+          });
+          res.send(utils.buildResData(`获取relationId=${relationId}&page=${page}的plan成功`, { code: 0, date:planInfo }));
+        } else {
+          res.send(utils.buildResData(`没有数据`, { code: 0, date:planInfo }));
+        }      
+      })
+      .catch(err => utils.sqlErr(err, res));
+  }
+});
 
+/* 
+  新增plan
+*/
+router.post('/create_status', function(req, res, next) {
+  // 获取数据
+  let {relationId, statusContent, statusTime} = req.body;
+  relationId = Number(relationId);
+  statusTime = new Date(statusTime);
+  // 检验数据
+  if(!Number.isInteger(relationId) || relationId < 0) {
+    return res.send(utils.buildResData('relationId不符合规范', { code: 1 }));
+  } else if(!statusContent) {
+    return res.send(utils.buildResData('statusContent为空', { code: 1 }));
+  } else if(statusTime > new Date()){
+    return res.send(utils.buildResData('statusTime错误', { code: 1 }));
+  } else {
+    statusTime = `${utils.formatDate(statusTime).date} ${utils.formatDate(statusTime).time}`;
+    status.createStatus(relationId, statusContent, statusTime)
+      .then(result => {
+        if(result.affectedRows === 1) {
+          return res.send(utils.buildResData('status创建完成', { code: 0, date: { relationId, statusContent, statusTime } }));
+        } else {
+          return res.send(utils.buildResData('创建status时发生未知错误', { code: 1 }));
+        }
+      })
+      .catch(err => utils.sqlErr(err, res));
+  }
+});
+/* 
+  删除plan
+*/
+router.post('/delete_status', function(req, res, next) {
+  // 获取数据
+  let {relationId, statusId} = req.body;
+  relationId = Number(relationId);
+  statusId = Number(statusId);
+  // 检验数据
+  if(!Number.isInteger(relationId) || relationId < 0) {
+    return res.send(utils.buildResData('relationId不符合规范', { code: 1 }));
+  } else if(!Number.isInteger(statusId) || statusId < 0) {
+    return res.send(utils.buildResData('statusId不符合规范', { code: 1 }));
+  } else {
+    status.deleteStatus(statusId, relationId)
+      .then(result => {
+        if(result.affectedRows === 1) {
+          return res.send(utils.buildResData('status删除完成', { code: 0, date: { relationId, statusId } }));
+        } else {
+          return res.send(utils.buildResData('不存在这条记录 || 这条记录已被删除', { code: 1 }));
+        }
+      })
+      .catch(err => utils.sqlErr(err, res));
+  }
+});
 module.exports = router;
