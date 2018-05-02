@@ -10,6 +10,9 @@ var plan = require('../model/plan');
 var anniversary = require('../model/anniversary');
 const STATUS_CODE = require('../utils/status');
 const REG_EXP = require('../utils/regexp');
+const PAGESIZE = 6;
+
+// TODO:1.检验数据部分提取函数，2.充分使用正则表达式检验数据
 
 /* 
   用户注册
@@ -39,7 +42,7 @@ router.post('/sign_up', (req, res, next) => {
           user.createUser(regTime, username, password, nickname, sex, birthday, email)
             .then(result => {
               if(result.affectedRows === 1) {
-                return res.send(utils.buildResData('注册成功', { code: 1 }));
+                return res.send(utils.buildResData('注册成功', { code: 0 }));
               }
             })
             .catch(err => utils.sqlErr(err, res));
@@ -232,7 +235,6 @@ router.post('/update_relation', function(req, res, next) {
 router.get('/status', (req, res, next) => {
   // 获取数据
   let {userId, page} = url.parse(req.url, true).query;
-  const pageSize = 10;
   userId = Number(userId);
   page = Number(page);
   // 检验数据
@@ -241,22 +243,22 @@ router.get('/status', (req, res, next) => {
   } else if((!Number.isInteger(page)) || (page < 0)) {
     return res.send(utils.buildResData('page不合法', { code: 1 }));
   } else {
-    const start = pageSize * page;
-    const end = pageSize * (page + 1);
+    const start = PAGESIZE * page;
+    const end = PAGESIZE * (page + 1);
     // 获取status分页
     status.getStatus(userId, start, end)
-    .then(statusInfo => {
-      if(statusInfo.length > 0) {
-        statusInfo = statusInfo.map(element => {
-          element.statusTime = `${utils.formatDate(element.statusTime).date} ${utils.formatDate(element.statusTime).time}`;
-          return element;
-        });
-        res.send(utils.buildResData(`获取userId=${userId}&page=${page}的status成功`, { code: 0, date:statusInfo }));
-      } else {
-        res.send(utils.buildResData(`没有记录`, { code: 0, date:statusInfo }));
-      }      
-    })
-    .catch(err => utils.sqlErr(err, res));
+      .then(statusInfo => {
+        if(statusInfo.length > 0) {
+          statusInfo = statusInfo.map(element => {
+            element.statusTime = `${utils.formatDate(element.statusTime).date} ${utils.formatDate(element.statusTime).time}`;
+            return element;
+          });
+          res.send(utils.buildResData(`获取userId=${userId}&page=${page}的status成功`, { code: 0, date:statusInfo }));
+        } else {
+          res.send(utils.buildResData(`没有记录`, { code: 0, date:statusInfo }));
+        }      
+      })
+      .catch(err => utils.sqlErr(err, res));
   }
 });
 
@@ -317,7 +319,6 @@ router.post('/delete_status', function(req, res, next) {
 router.get('/plan', (req, res, next) => {
   // 获取数据
   let {relationId, page} = url.parse(req.url, true).query;
-  const pageSize = 10;
   relationId = Number(relationId);
   page = Number(page);
   // 检验数据
@@ -327,29 +328,29 @@ router.get('/plan', (req, res, next) => {
     return res.send(utils.buildResData('page不合法', { code: 1 }));
   } else {
     relation.getRelationById(relationId)
-    .then(relationInfo => {
-      if(!relationInfo.length){
-        res.send(utils.buildResData(`不存在relationId=${relationId}的relation`, { code: 1 }));
-      } else {        
-        const start = pageSize * page;
-        const end = pageSize * (page + 1);
-        // 获取plan分页
-        plan.getPlan(relationId, start, end)
-          .then(planInfo => {
-            if(planInfo.length > 0) {
-              planInfo = planInfo.map(element => {
-                element.planTime = `${utils.formatDate(element.planTime).date} ${utils.formatDate(element.planTime).time}`;
-                return element;
-              });
-              res.send(utils.buildResData(`获取relationId=${relationId}&page=${page}的plan成功`, { code: 0, date:planInfo }));
-            } else {
-              res.send(utils.buildResData(`没有记录`, { code: 0, date:planInfo }));
-            }      
-          })
-          .catch(err => utils.sqlErr(err, res));
-      }
-    })
-    .catch(err => utils.sqlErr(err, res));
+      .then(relationInfo => {
+        if(!relationInfo.length){
+          res.send(utils.buildResData(`不存在relationId=${relationId}的relation`, { code: 1 }));
+        } else {        
+          const start = PAGESIZE * page;
+          const end = PAGESIZE * (page + 1);
+          // 获取plan分页
+          plan.getPlan(relationId, start, end)
+            .then(planInfo => {
+              if(planInfo.length > 0) {
+                planInfo = planInfo.map(element => {
+                  element.planTime = `${utils.formatDate(element.planTime).date} ${utils.formatDate(element.planTime).time}`;
+                  return element;
+                });
+                res.send(utils.buildResData(`获取relationId=${relationId}&page=${page}的plan成功`, { code: 0, date:planInfo }));
+              } else {
+                res.send(utils.buildResData(`没有记录`, { code: 0, date:planInfo }));
+              }      
+            })
+            .catch(err => utils.sqlErr(err, res));
+        }
+      })
+      .catch(err => utils.sqlErr(err, res));
   }
 });
 
@@ -368,22 +369,22 @@ router.post('/create_plan', function(req, res, next) {
     return res.send(utils.buildResData('planContent不能为空', { code: 1 }));
   } else {
     relation.getRelationById(relationId)
-    .then(relationInfo => {
-      if(!relationInfo.length){
-        res.send(utils.buildResData(`不存在relationId=${relationId}的relation`, { code: 1 }));
-      } else {        
-        planTime = `${utils.formatDate(planTime).date} ${utils.formatDate(planTime).time}`;
-        plan.createPlan(relationId, planContent, planTime)
-          .then(result => {
-            if(result.affectedRows === 1) {
-              return res.send(utils.buildResData('plan创建完成', { code: 0, date: { relationId, planContent, planTime, planStatus:0 } }));
-            }
-            return res.send(utils.buildResData('创建plan时发生未知错误', { code: 1 }));
-          })
-          .catch(err => utils.sqlErr(err, res));
-      }
-    })
-    .catch(err => utils.sqlErr(err, res));
+      .then(relationInfo => {
+        if(!relationInfo.length){
+          res.send(utils.buildResData(`不存在relationId=${relationId}的relation`, { code: 1 }));
+        } else {        
+          planTime = `${utils.formatDate(planTime).date} ${utils.formatDate(planTime).time}`;
+          plan.createPlan(relationId, planContent, planTime)
+            .then(result => {
+              if(result.affectedRows === 1) {
+                return res.send(utils.buildResData('plan创建完成', { code: 0, date: { relationId, planContent, planTime, planStatus:0 } }));
+              }
+              return res.send(utils.buildResData('创建plan时发生未知错误', { code: 1 }));
+            })
+            .catch(err => utils.sqlErr(err, res));
+        }
+      })
+      .catch(err => utils.sqlErr(err, res));
   }
 });
 /* 
@@ -403,21 +404,21 @@ router.post('/update_plan', function(req, res, next) {
     return res.send(utils.buildResData('operation不符合规范', { code: 1 }));
   } else {
     relation.getRelationById(relationId)
-    .then(relationInfo => {
-      if(!relationInfo.length){
-        res.send(utils.buildResData(`不存在relationId=${relationId}的relation`, { code: 1 }));
-      } else {
-        plan.updatePlan(planId, relationId, operation)
-        .then(result => {
-          if(result.affectedRows === 1) {
-            return res.send(utils.buildResData('plan更新完成', { code: 0, date: { relationId, planId } }));
-          }
-          return res.send(utils.buildResData('不存在这条记录 || 这条记录已被删除', { code: 1 }));
-        })
-        .catch(err => utils.sqlErr(err, res));
-      }
-    })
-    .catch(err => utils.sqlErr(err, res));
+      .then(relationInfo => {
+        if(!relationInfo.length){
+          res.send(utils.buildResData(`不存在relationId=${relationId}的relation`, { code: 1 }));
+        } else {
+          plan.updatePlan(planId, relationId, operation)
+            .then(result => {
+              if(result.affectedRows === 1) {
+                return res.send(utils.buildResData('plan更新完成', { code: 0, date: { relationId, planId } }));
+              }
+              return res.send(utils.buildResData('不存在这条记录 || 这条记录已被删除', { code: 1 }));
+            })
+            .catch(err => utils.sqlErr(err, res));
+        }
+      })
+      .catch(err => utils.sqlErr(err, res));
   }
 });
 /* 
@@ -435,21 +436,21 @@ router.post('/delete_plan', function(req, res, next) {
     return res.send(utils.buildResData('planId不符合规范', { code: 1 }));
   } else {
     relation.getRelationById(relationId)
-    .then(relationInfo => {
-      if(!relationInfo.length){
-        res.send(utils.buildResData(`不存在relationId=${relationId}的relation`, { code: 1 }));
-      } else {
-        plan.deletePlan(planId, relationId)
-        .then(result => {
-          if(result.affectedRows === 1) {
-            return res.send(utils.buildResData('plan删除完成', { code: 0, date: { relationId, planId } }));
-          }
-          return res.send(utils.buildResData('不存在这条记录 || 这条记录已被删除', { code: 1 }));
-        })
-        .catch(err => utils.sqlErr(err, res));
-      }
-    })
-    .catch(err => utils.sqlErr(err, res));
+      .then(relationInfo => {
+        if(!relationInfo.length){
+          res.send(utils.buildResData(`不存在relationId=${relationId}的relation`, { code: 1 }));
+        } else {
+          plan.deletePlan(planId, relationId)
+          .then(result => {
+            if(result.affectedRows === 1) {
+              return res.send(utils.buildResData('plan删除完成', { code: 0, date: { relationId, planId } }));
+            }
+            return res.send(utils.buildResData('不存在这条记录 || 这条记录已被删除', { code: 1 }));
+          })
+          .catch(err => utils.sqlErr(err, res));
+        }
+      })
+      .catch(err => utils.sqlErr(err, res));
   }
 });
 /* 
@@ -464,26 +465,26 @@ router.get('/anniversary', (req, res, next) => {
     return res.send(utils.buildResData('relationId不合法', { code: 1 }));
   } else {
     relation.getRelationById(relationId)
-    .then(relationInfo => {
-      if(!relationInfo.length){
-        res.send(utils.buildResData(`不存在relationId=${relationId}的relation`, { code: 1 }));
-      } else {
-        anniversary.getAnniversary(relationId)
-          .then(anniversaryInfo => {
-            if(anniversaryInfo.length > 0) {
-              anniversaryInfo = anniversaryInfo.map(element => {
-                element.anniversaryTime = `${utils.formatDate(element.anniversaryTime).date} ${utils.formatDate(element.anniversaryTime).time}`;
-                return element;
-              });
-              res.send(utils.buildResData(`获取relationId=${relationId}的anniversary成功`, { code: 0, date:anniversaryInfo }));
-            } else {
-              res.send(utils.buildResData(`没有记录`, { code: 0, date:anniversaryInfo }));
-            }      
-          })
-          .catch(err => utils.sqlErr(err, res));
-      }
-    })
-    .catch(err => utils.sqlErr(err, res));
+      .then(relationInfo => {
+        if(!relationInfo.length){
+          res.send(utils.buildResData(`不存在relationId=${relationId}的relation`, { code: 1 }));
+        } else {
+          anniversary.getAnniversary(relationId)
+            .then(anniversaryInfo => {
+              if(anniversaryInfo.length > 0) {
+                anniversaryInfo = anniversaryInfo.map(element => {
+                  element.anniversaryTime = `${utils.formatDate(element.anniversaryTime).date} ${utils.formatDate(element.anniversaryTime).time}`;
+                  return element;
+                });
+                res.send(utils.buildResData(`获取relationId=${relationId}的anniversary成功`, { code: 0, date:anniversaryInfo }));
+              } else {
+                res.send(utils.buildResData(`没有记录`, { code: 0, date:anniversaryInfo }));
+              }      
+            })
+            .catch(err => utils.sqlErr(err, res));
+        }
+      })
+      .catch(err => utils.sqlErr(err, res));
   }
 });
 
@@ -534,14 +535,23 @@ router.post('/delete_anniversary', function(req, res, next) {
   } else if(!Number.isInteger(anniversaryId) || anniversaryId < 0) {
     return res.send(utils.buildResData('anniversaryId不符合规范', { code: 1 }));
   } else {
-    anniversary.deleteAnniversary(anniversaryId, relationId)
-      .then(result => {
-        if(result.affectedRows === 1) {
-          return res.send(utils.buildResData('anniversary删除完成', { code: 0, date: { relationId, anniversaryId } }));
+    relation.getRelationById(relationId)
+      .then(relationInfo => {
+        if(!relationInfo.length){
+          res.send(utils.buildResData(`不存在relationId=${relationId}的relation`, { code: 1 }));
+        } else {
+          anniversary.deleteAnniversary(anniversaryId, relationId)
+            .then(result => {
+              if(result.affectedRows === 1) {
+                return res.send(utils.buildResData('anniversary删除完成', { code: 0, date: { relationId, anniversaryId } }));
+              }
+              return res.send(utils.buildResData('不存在这条记录 || 这条记录已被删除', { code: 1 }));
+            })
+            .catch(err => utils.sqlErr(err, res));
         }
-        return res.send(utils.buildResData('不存在这条记录 || 这条记录已被删除', { code: 1 }));
       })
       .catch(err => utils.sqlErr(err, res));
+    
   }
 });
 module.exports = router;
