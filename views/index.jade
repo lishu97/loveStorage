@@ -3,8 +3,8 @@ extends layout
 block content
   h1= title
   p Welcome to #{title}
-  form(action='/api/create_anniversary', method='post')
-    input(type='text',name='relationId')
-    input(type='text',name='anniversaryContent')
-    input(type='date',name='anniversaryTime')
+  form(action='/api/update_relation', method='post')
+    input(type='text',name='userId1')
+    input(type='text',name='userId2')
+    input(type='text',name='operation')
     input(type='submit')

@@ -94,30 +94,31 @@ router.get('/lover_info', function(req, res, next) {
   userId = Number(userId);
   // 检验数据
   if((!Number.isInteger(userId)) || (userId < 0)) {
-    return res.send(utils.buildResData('参数不合法', { code: 1 }));
+    return res.send(utils.buildResData('userId参数不合法', { code: 1 }));
   } else {
     // 检验该用户是否有绑定的情侣
     relation.getCurrentRelation(userId)
       .then(relation => {
         if(relation.length === 0){
-          // 当前无绑定情侣
-          res.send(utils.buildResData('该用户当前未绑定情侣 || 不存在该用户', { code: 0, lover:{} }));
+          user.getUserInfoByUserId(userId)
+            .then(userInfo => {
+              if(userInfo.length !== 0) {
+                return res.send(utils.buildResData(`userId=${userId}的用户当前未绑定情侣`, { code: 0, lover:{} }));
+              }
+              return  res.send(utils.buildResData(`不存在userId=${userId}的用户`, { code: 0, lover:{} }));
+            })
+            .catch(err => utils.sqlErr(err, res));
         } else {
           // 当前关系信息在relation[0]中
           const { userId1, userId2 } = relation[0];
-          let loverId = '';
-          if(Number(userId1) === Number(userId)) {
-            loverId = userId2;
-          } else {
-            loverId = userId1;
-          }
+          const loverId = Number(userId1) === Number(userId) ? userId2 : userId1
           // 根据情侣ID获取信息
           user.getUserInfoByUserId(loverId)
             .then(loverInfo => {
               loverInfo = utils.formatInfo(loverInfo);
               res.send(utils.buildResData('当前已绑定情侣', { code: 0, lover:{...loverInfo[0]} }));
             })
-            .catch(err => utils.sqlErr(err, res))
+            .catch(err => utils.sqlErr(err, res));
         }
       })
       .catch(err => utils.sqlErr(err, res));
@@ -140,59 +141,88 @@ router.post('/update_relation', function(req, res, next) {
   } else if(!(operation === 'start' || operation === 'stop')) {
     return res.send(utils.buildResData('operation不合法', { code: 1 }));
   } else {
-    
-    if(operation === 'start') {
-      // 绑定
-      relation.getCurrentRelation(userId1)
-        .then(relationInfo1 => {
-          // 检验userID1当前是否已绑定情侣
-          if(relationInfo1.length && !relationInfo1[0].relationStopTime) {
-            return res.send(utils.buildResData('userId1已绑定情侣', { code: 1 }));
-          } else {
-            relation.getCurrentRelation(userId2)
-              .then(relationInfo2 => {
-                // 检验userID2当前是否已绑定情侣
-                if(relationInfo2.length && !relationInfo2[0].relationStopTime) {
-                  return res.send(utils.buildResData('userId2已绑定情侣', { code: 1 }));
-                } else {
-                  // 绑定操作
-                  relation.updateRelation(userId1, userId2)
-                    .then(result => {
-                      if(result.affectedRows === 1) {
-                        res.send(utils.buildResData('绑定操作成功', { code: 0 , date: { userId1, userId2 } }));
-                      } else {
-                        res.send(utils.buildResData(`绑定操作失败，造成原因：不存在这样的关系 || 这段关系已经被启动}`, { code: 1 , date: { userId1, userId2 } }));
-                      }
-                    })
-                    .catch(err => utils.sqlErr(err, res));
-                }
-              })
-              .catch(err => utils.sqlErr(err, res));
-          }
-        })
-        .catch(err => utils.sqlErr(err, res));
-    } else {
-      // 解绑
-      relation.getRelation(userId1, userId2)
-        .then(relationInfo => {
-          if(!relationInfo[0]) {
-            return res.send(utils.buildResData('userId1与userId2非情侣，不需要解除关系', { code: 1 }));
-          } else {
-            // 解除绑定
-            const time = `${utils.getDate()} ${utils.getTime()}`;
-            relation.updateRelation(userId1, userId2, time)
-              .then(result => {
-                if(result.affectedRows === 1) {
-                  res.send(utils.buildResData('解绑操作成功', { code: 0 , date: { userId1, userId2, time } }));
-                } else {
-                  res.send(utils.buildResData(`解绑操作失败，造成原因：不存在这样的关系 || 这段关系已经被中止}`, { code: 1 , date: { userId1, userId2, time } }));
-                }
-              })
-              .catch(err => utils.sqlErr(err, res));
-          }
-        })
-        .catch(err => utils.sqlErr(err, res));   
-    }
+    user.getUserInfoByUserId(userId1)
+      .then(userInfo1 => {
+        if(userInfo1.length === 0) {
+          // userId1用户不存在
+          return res.send(utils.buildResData(`不存在userId=${userId1}的用户`, { code: 1 }));
+        }
+        user.getUserInfoByUserId(userId2)
+          .then(userInfo2 => {
+            if(userInfo2.length === 0) {
+              // userId2用户不存在
+              return res.send(utils.buildResData(`不存在userId=${userId2}的用户`, { code: 1 }));
+            }
+            if(operation === 'start') {
+              // 绑定
+              relation.getCurrentRelation(userId1)
+                .then(relationInfo1 => {
+                  // 检验userID1当前是否已绑定情侣
+                  if(relationInfo1.length && !relationInfo1[0].relationStopTime) {
+                    return res.send(utils.buildResData('userId1已绑定情侣', { code: 1 }));
+                  } else {
+                    relation.getCurrentRelation(userId2)
+                      .then(relationInfo2 => {
+                        // 检验userID2当前是否已绑定情侣
+                        if(relationInfo2.length && !relationInfo2[0].relationStopTime) {
+                          return res.send(utils.buildResData('userId2已绑定情侣', { code: 1 }));
+                        } else {
+                          relation.getRelation(userId1, userId2)
+                            .then(relationInfo => {
+                              if(relationInfo.length === 0){
+                                // 创建关系操作
+                                const time = `${utils.getDate()} ${utils.getTime()}`;
+                                relation.startRelation(userId1, userId2, time) 
+                                  .then(result => {
+                                    if(result.affectedRows === 1) {
+                                      res.send(utils.buildResData('创建关系成功', { code: 0 , date: { userId1, userId2 } }));                                
+                                    }
+                                  })
+                                  .catch(err => utils.sqlErr(err, res));
+                              } else {
+                                // 更新关系操作
+                                relation.updateRelation(userId1, userId2)
+                                  .then(result => {
+                                    if(result.affectedRows === 1) {
+                                      res.send(utils.buildResData('重启关系成功', { code: 0 , date: { userId1, userId2 } }));                                
+                                    }
+                                  })
+                                  .catch(err => utils.sqlErr(err, res));
+                              }
+                            })
+                            .catch(err => utils.sqlErr(err, res));
+                        }
+                      })
+                      .catch(err => utils.sqlErr(err, res));
+                  }
+                })
+                .catch(err => utils.sqlErr(err, res));
+            } else {
+              // 解绑
+              relation.getRelation(userId1, userId2)
+                .then(relationInfo => {
+                  if(!relationInfo[0]) {
+                    return res.send(utils.buildResData(`userId1=${userId1}的用户与userId2=${userId2}的用户无关系记录`, { code: 1 }));
+                  } else {
+                    // 解除绑定
+                    const time = `${utils.getDate()} ${utils.getTime()}`;
+                    relation.updateRelation(userId1, userId2, time)
+                      .then(result => {
+                        if(result.affectedRows === 1) {
+                          res.send(utils.buildResData('解绑操作成功', { code: 0 , date: { userId1, userId2, time } }));
+                        } else {
+                          res.send(utils.buildResData(`解绑操作失败，这段关系已经被中止}`, { code: 1 , date: { userId1, userId2, time } }));
+                        }
+                      })
+                      .catch(err => utils.sqlErr(err, res));
+                  }
+                })
+                .catch(err => utils.sqlErr(err, res));   
+            }
+          })
+          .catch(err => utils.sqlErr(err, res));
+      })
+      .catch(err => utils.sqlErr(err, res));
   }
 });
 

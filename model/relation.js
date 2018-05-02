@@ -103,17 +103,3 @@ module.exports.updateRelation = function(userId1, userId2, time) {
     });
   });
 };
-
-// 关闭userId1与userId2的关系
-module.exports.stopRelation = function(userId1, userId2) {
-  const sql = `UPDATE relation SET relationStopTime=NULL 
-    WHERE ((userId1='${userId1}' AND userId2='${userId2}') OR (userId1='${userId2}' AND userId2='${userId1}')) AND (relationEndTime IS NOT NULL)`;
-  return new Promise(function(resolve, reject) {
-    pool.query(sql, function(err, result) {
-      if(err) {
-        return reject(err);
-      }
-      return resolve(result);
-    });
-  });
-};
