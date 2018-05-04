@@ -1,6 +1,7 @@
 var express = require('express');
 var url = require('url');
 var router = express.Router();
+var request = require('request');
 
 var utils = require('../utils/utils');
 var user = require('../model/user');
@@ -13,7 +14,35 @@ const REG_EXP = require('../utils/regexp');
 const PAGESIZE = 6;
 
 // TODO:1.检验数据部分提取函数，2.充分使用正则表达式检验数据
+/* 
+  微信登录
+*/
+router.get('/wx/onlogin', (req, res, next) => {
+  const { code } = url.parse(req.url, true).query;
+  request.get({
+    uri: 'https://api.weixin.qq.com/sns/jscode2session',
+    json: true,
+    qs: {
+      grant_type: 'authorization_code',
+      appid: 'wxb29390f3bfc81bed',
+      secret: '9a12e37b6fe59bad401afcf2e467ada3',
+      js_code: code
+    }
+  }, (err, response, data) => {
+    if (response.statusCode === 200) {
+      console.log("[openid]", data.openid)
+      console.log("[session_key]", data.session_key)
 
+      //TODO: 生成一个唯一字符串sessionid作为键，将openid和session_key作为值，存入redis，超时时间设置为2小时
+      //伪代码: redisStore.set(sessionid, openid + session_key, 7200)
+
+      // res.json({ sessionid: sessionid })
+    } else {
+      console.log("[error]", err)
+      res.json(err)
+    }
+  })
+})
 /* 
   用户注册
 */
