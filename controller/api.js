@@ -4,7 +4,6 @@ var router = express.Router();
 var request = require('request');
 
 var utils = require('../utils/utils');
-var session = require('../model/session');
 var user = require('../model/user');
 var relation = require('../model/relation');
 var status = require('../model/status');
@@ -14,18 +13,7 @@ const STATUS_CODE = require('../utils/status');
 const REG_EXP = require('../utils/regexp');
 const PAGESIZE = 6;
 
-// session
-const timer = {};
-function countTime(sessionId) {
-  timer[sessionId] = setTimeout(() => {
-    session.deleteSession(sessionId)
-      .then(result => {
-        if(result.affectedRows === 1) {
-          console.log('session已删除');
-        }
-      })
-  }, 30000);
-}
+exports.rootPath = '/api';
 
 // TODO:1.检验数据部分提取函数，2.充分使用正则表达式检验数据
 /* 
@@ -44,23 +32,67 @@ router.get('/wx/onlogin', (req, res, next) => {
     }
   }, (err, response, data) => {
     if (response.statusCode === 200) {
-      console.log("[openid]", data.openid);
-      console.log("[session_key]", data.session_key);
-      session.createSession(data.session_key, data.openid)
-        .then((result) => {
-          let sessionId = result.sessionId;
-          if(result.affectedRows === 1) {
+      let msg = '';
+      let ret_data = {};
+      let sessionId = undefined;
+      session.getSessionByOpenId(data.openid)
+        .then(result => {
+          if(result.length === 0) {
+            session.createSession(data.session_key, data.openid)
+              .then((result) => {
+                sessionId = result.sessionId;
+                if(result.affectedRows === 1) {
+                  msg = '登录成功';
+                  ret_data = { 'code': 0, sessionId };
+                  countTime(sessionId);
+                } else {
+                  msg = '创建session时发生未知错误';
+                  ret_data = { 'code': 1 };
+                }
+              })
+              .catch(err => utils.sqlErr(err, res));
+          } else {
+            const sessionId = result[0].sessionId;
+            msg = '重新连接服务器';
+            ret_data = { 'code': 0, sessionId };
             countTime(sessionId);
-            return res.send(utils.buildResData('登录成功', { 'code': 1, sessionId }));
           }
-          return res.send(utils.buildResData('创建session时发生未知错误', { 'code': 1 }));
+        })
+        .then(() => {
+          user.getUserInfoByOpenId(data.openid)
+            .then(userInfo => {
+              if(ret_data.code == 0) {
+                if(userInfo.length === 0) {
+                  return res.send(utils.buildResData('请绑定用户名', { 'code': 1, sessionId }));
+                }
+                return res.send(utils.buildResData(msg, {...ret_data, userInfo: userInfo[0]}));
+              }
+              return res.send(utils.buildResData(msg, ret_data));
+            })
+            .catch(err => utils.sqlErr(err, res));
         })
         .catch(err => utils.sqlErr(err, res));
+      
     } else {
-      console.log("[error]", err)
+      console.log("error:", err)
       res.json(err)
     }
   })
+})
+/* 
+  微信用户绑定用户名
+*/
+router.post('/bind_username', (req, res, next) => {
+  // 获取数据
+  let {username, sessionId} = req.body;
+  session.getSessionBySessionId(sessionId)
+    .then(sessionInfo => {
+      if(sessionInfo.length === 0) {
+        return res.send(utils.buildResData('已绑定用户名', { 'code': 1, userInfo:userInfo[0] }));
+      } else {
+        user.addOpenID(username, sessionInfo[0].openId)
+      }
+    })
 })
 /* 
   用户注册
@@ -104,35 +136,49 @@ router.post('/sign_up', (req, res, next) => {
   用户登录
 */
 router.post('/sign_in', function(req, res, next) {
-  // 获取数据
-  const {username, password} = req.body;
-  // 检验数据
-  if(!REG_EXP.username.test(username)) {
-    return res.send(utils.buildResData('用户名不符合规范', { 'code': 1 }));
-  } else if(!REG_EXP.password.test(password)) {
-    return res.send(utils.buildResData('密码不符合规范', { 'code': 1 }));
-  } else {
-    // 检验用户名与密码是否匹配
-    user.getUserPassword(username)
-      .then(sqlPassword => {
-        if(sqlPassword.length === 0) {
-          // 登录失败
-          return res.send(utils.buildResData('用户名不存在', { 'code': 1 }));
-        } else if(password !== sqlPassword[0].password) {
-          // 登录失败
-          return res.send(utils.buildResData('用户名或密码错误', { 'code': 1 }));
-        } else {
-          // 登录成功
-          user.getUserInfoByUsername(username)
-            .then(userInfo => {
-              userInfo = utils.formatInfo(userInfo);
-              // 返回登录用户信息到前端
-              return res.send(utils.buildResData('登录成功', { 'code': 0, ...userInfo[0] }));
-            })
-            .catch(err => utils.sqlErr(err, res));
-        }
-      })
-      .catch(err => utils.sqlErr(err, res));
+  function signIn() {
+    // 获取数据
+    const {username, password} = req.body;
+    // 检验数据
+    if(!REG_EXP.username.test(username)) {
+      return res.send(utils.buildResData('用户名不符合规范', { 'code': 1 }));
+    } else if(!REG_EXP.password.test(password)) {
+      return res.send(utils.buildResData('密码不符合规范', { 'code': 1 }));
+    } else {
+      // 检验用户名与密码是否匹配
+      user.getUserPassword(username)
+        .then(sqlPassword => {
+          if(sqlPassword.length === 0) {
+            // 登录失败
+            return res.send(utils.buildResData('用户名不存在', { 'code': 1 }));
+          } else if(password !== sqlPassword[0].password) {
+            // 登录失败
+            return res.send(utils.buildResData('用户名或密码错误', { 'code': 1 }));
+          } else {
+            // 登录成功
+            user.getUserInfoByUsername(username)
+              .then(userInfo => {
+                userInfo = utils.formatInfo(userInfo);
+                req.session.userId = userInfo[0].userId;
+                // 返回登录用户信息到前端
+                return res.send(utils.buildResData('登录成功', { 'code': 0, ...userInfo[0] }));
+              })
+              .catch(err => utils.sqlErr(err, res));
+          }
+        })
+        .catch(err => utils.sqlErr(err, res));
+    }
+  }
+  if (req.session.userId) {
+    // 先清空之前的登录状态
+    req.session.regenerate(function(err) {
+      if(err) {
+        return res.send(utils.buildResData('登录失败', { 'code': 1 }));
+      }
+      signIn();
+    });
+  }else {
+    signIn();
   }
 });
 
@@ -599,7 +645,7 @@ router.post('/delete_anniversary', function(req, res, next) {
         }
       })
       .catch(err => utils.sqlErr(err, res));
-    
   }
 });
-module.exports = router;
+
+exports.router = router;
