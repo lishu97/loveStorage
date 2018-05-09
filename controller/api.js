@@ -69,12 +69,14 @@ router.post('/bind_username', (req, res, next) => {
 */
 router.post('/sign_up', (req, res, next) => {
   // 获取数据
-  let {username, password, nickname, sex, birthday, email} = req.body;
+  let {username, password, nickname, avatar} = req.body;
   // 检验数据
   if(!REG_EXP.username.test(username)) {
     return res.send(utils.buildResData('用户名不符合规范', { code: 1 }));
   } else if(!REG_EXP.password.test(password)) {
     return res.send(utils.buildResData('密码不符合规范', { code: 1 }));
+  } else if(!nickname) {
+    return res.send(utils.buildResData('昵称不能为空', { code: 1 }));
   } else {
     // 检验用户名是否重复
     user.getUserInfoByUsername(username)
@@ -84,15 +86,17 @@ router.post('/sign_up', (req, res, next) => {
         } else {
           // 处理数据
           const regTime = `${utils.getDate()} ${utils.getTime()}`;
-          nickname = nickname || username;
-          sex = sex || 0;
-          birthday = birthday || `${utils.getDate()}`;
-          email = email || ``;
+          avatar = req.body.avatar ? req.body.avatar : '/img/default.png';
           // 录入数据库
-          user.createUser(regTime, username, password, nickname, sex, birthday, email)
+          user.createUser(regTime, username, password, nickname, avatar)
             .then(result => {
               if(result.affectedRows === 1) {
-                return res.send(utils.buildResData('注册成功', { code: 0 }));
+                req.session.regTime = regTime;
+                req.session.userId = result.insertId;
+                req.session.username = username;
+                req.session.nickname = nickname;
+                req.session.avatar = avatar;                
+                return res.send(utils.buildResData('注册成功', { code: 0 , data: { nickname, avatar }}));
               }
             })
             .catch(err => utils.sqlErr(err, res));
@@ -129,7 +133,11 @@ router.post('/sign_in', function(req, res, next) {
             user.getUserInfoByUsername(username)
               .then(userInfo => {
                 userInfo = utils.formatInfo(userInfo);
+                req.session.regTime = userInfo[0].regTime;
                 req.session.userId = userInfo[0].userId;
+                req.session.username = userInfo[0].username;
+                req.session.nickname = userInfo[0].nickname;
+                req.session.avatar = userInfo[0].avatar;
                 // 返回登录用户信息到前端
                 return res.send(utils.buildResData('登录成功', { code: 0, ...userInfo[0] }));
               })

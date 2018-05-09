@@ -3,9 +3,9 @@ const mysql = require('mysql');
 const mysqlOptions = require('../config/mysqlOptions');
 const pool = mysql.createPool(mysqlOptions);
 
-module.exports.createUser = function(regTime, username, password, nickname, sex, birthday, email) {
-  const sql = `INSERT INTO user (regTime, username, password, nickname, sex, birthday, email) 
-    VALUES ('${regTime}', '${username}', '${password}', '${nickname}', ${sex}, '${birthday}', '${email}')`;
+module.exports.createUser = function(regTime, username, password, nickname, avatar) {
+  const sql = `INSERT INTO user (regTime, username, password, nickname, avatar) 
+    VALUES ('${regTime}', '${username}', '${password}', '${nickname}', '${avatar}')`;
   return new Promise(function(resolve, reject) {
     pool.query(sql, function(err, result) {
         if(err) {
@@ -42,7 +42,7 @@ module.exports.getUserPassword = function(username) {
 };
 
 module.exports.getUserInfoByUsername = function(username) {
-  const sql = `SELECT userId,regTime,nickname,sex,birthday,email FROM user WHERE username = '${username}'`;
+  const sql = `SELECT userId,regTime,nickname,avatar FROM user WHERE username = '${username}'`;
   return new Promise(function(resolve, reject) {
     pool.query(sql, function(err, result) {
         if(err) {
@@ -54,7 +54,7 @@ module.exports.getUserInfoByUsername = function(username) {
 };
 
 module.exports.getUserInfoByUserId = function(userId) {
-  const sql = `SELECT userId,regTime,nickname,sex,birthday,email FROM user WHERE userId = '${userId}'`;
+  const sql = `SELECT userId,regTime,nickname,avatar FROM user WHERE userId = '${userId}'`;
   return new Promise(function(resolve, reject) {
     pool.query(sql, function(err, result) {
         if(err) {
@@ -66,7 +66,7 @@ module.exports.getUserInfoByUserId = function(userId) {
 };
 
 module.exports.getUserInfoByOpenId = function(openId) {
-  const sql = `SELECT userId,regTime,nickname,sex,birthday,email FROM user WHERE openId = '${openId}'`;
+  const sql = `SELECT userId,regTime,nickname,avatar FROM user WHERE openId = '${openId}'`;
   return new Promise(function(resolve, reject) {
     pool.query(sql, function(err, result) {
         if(err) {

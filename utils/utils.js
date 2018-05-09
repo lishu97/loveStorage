@@ -12,13 +12,12 @@ module.exports.getTime = () => {
 }
 
 module.exports.formatDate = formatDate = (date) => {
-  date = moment(date).format('YYYY-MM-DD');
   time = moment(date).format('HH:mm:ss');
+  date = moment(date).format('YYYY-MM-DD');  
   return { date, time };
 }
 
 module.exports.formatInfo = (info) => {
-  info[0].birthday = formatDate(info[0].birthday).date;
   info[0].regTime = `${formatDate(info[0].regTime).date} ${formatDate(info[0].regTime).time}`;
   return info;
 }
