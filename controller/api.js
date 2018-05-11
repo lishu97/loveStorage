@@ -2,6 +2,19 @@ var express = require('express');
 var url = require('url');
 var router = express.Router();
 var request = require('request');
+var uuidv1 = require('uuid/v1');
+var multer = require('multer');
+var path = require('path');
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+      cb(null, path.resolve('public', 'img'));
+  },
+  filename: function (req, file, cb) {
+      cb(null, uuidv1() + '.' + 'jpg');
+  }
+});
+const upload = multer({ storage }).single('img');
 
 var utils = require('../utils/utils');
 var user = require('../model/user');
@@ -11,13 +24,13 @@ var plan = require('../model/plan');
 var anniversary = require('../model/anniversary');
 const STATUS_CODE = require('../utils/status');
 const REG_EXP = require('../utils/regexp');
-const PAGESIZE = 6;
+const PAGESIZE = 100;
 
 exports.rootPath = '/api';
 
 // TODO:1.检验数据部分提取函数，2.充分使用正则表达式检验数据
 /* 
-  微信登录
+  微信：登录
 */
 router.get('/wx/onlogin', (req, res, next) => {
   const { code } = url.parse(req.url, true).query;
@@ -50,7 +63,7 @@ router.get('/wx/onlogin', (req, res, next) => {
   })
 })
 /* 
-  微信用户绑定用户名
+  微信：用户绑定用户名
 */
 router.post('/bind_username', (req, res, next) => {
   // 获取数据
@@ -64,6 +77,20 @@ router.post('/bind_username', (req, res, next) => {
       }
     })
 })
+/*
+   上传用户头像
+ */
+router.post('/upload_avatar', function (req, res, next) {
+  upload(req, res, function (err) {
+      if (err) {
+          return next(err);
+      }
+      res.send(tool.buildResData({
+          path: `/img/${req.file.filename}`,
+          success: true
+      }));
+  });
+});
 /* 
   用户注册
 */
@@ -87,16 +114,18 @@ router.post('/sign_up', (req, res, next) => {
           // 处理数据
           const regTime = `${utils.getDate()} ${utils.getTime()}`;
           avatar = req.body.avatar ? req.body.avatar : '/img/default.png';
+          const loveId = uuidv1();
           // 录入数据库
-          user.createUser(regTime, username, password, nickname, avatar)
+          user.createUser(regTime, username, password, nickname, avatar, loveId)
             .then(result => {
               if(result.affectedRows === 1) {
                 req.session.regTime = regTime;
                 req.session.userId = result.insertId;
                 req.session.username = username;
                 req.session.nickname = nickname;
-                req.session.avatar = avatar;                
-                return res.send(utils.buildResData('注册成功', { code: 0 , data: { nickname, avatar }}));
+                req.session.avatar = avatar;  
+                req.session.loveId = loveId;              
+                return res.send(utils.buildResData('注册成功，请前往登录', { code: 0, regTime, username, nickname, avatar, loveId }));
               }
             })
             .catch(err => utils.sqlErr(err, res));
@@ -138,8 +167,16 @@ router.post('/sign_in', function(req, res, next) {
                 req.session.username = userInfo[0].username;
                 req.session.nickname = userInfo[0].nickname;
                 req.session.avatar = userInfo[0].avatar;
-                // 返回登录用户信息到前端
-                return res.send(utils.buildResData('登录成功', { code: 0, ...userInfo[0] }));
+                relation.getCurrentRelation(userInfo[0].userId)
+                  .then(relation => {
+                    let relationId;
+                    if(relation.length === 0) {
+                      relationId = 0;
+                    } 
+                    // 返回登录用户信息到前端
+                    return res.send(utils.buildResData('登录成功', { code: 0, ...userInfo[0], relationId }));
+                  })
+                  .catch(err => utils.sqlErr(err, res));
               })
               .catch(err => utils.sqlErr(err, res));
           }
@@ -205,100 +242,119 @@ router.get('/lover_info', function(req, res, next) {
 */
 router.post('/update_relation', function(req, res, next) {
   // 获取数据
-  let { userId1, userId2,  operation } = req.body;
-  userId1 = Number(userId1);
-  userId2 = Number(userId2);
-  // 检验数据
-  if((!Number.isInteger(userId1)) || (userId1 < 0)) {
-    return res.send(utils.buildResData('userId1不合法', { code: 1 }));
-  } else if((!Number.isInteger(userId2)) || (userId2 < 0)){
-    return res.send(utils.buildResData('userId2不合法', { code: 1 }));
-  } else if(!(operation === 'start' || operation === 'stop')) {
-    return res.send(utils.buildResData('operation不合法', { code: 1 }));
-  } else {
-    user.getUserInfoByUserId(userId1)
-      .then(userInfo1 => {
-        if(userInfo1.length === 0) {
-          // userId1用户不存在
-          return res.send(utils.buildResData(`不存在userId=${userId1}的用户`, { code: 1 }));
-        }
-        user.getUserInfoByUserId(userId2)
-          .then(userInfo2 => {
-            if(userInfo2.length === 0) {
-              // userId2用户不存在
-              return res.send(utils.buildResData(`不存在userId=${userId2}的用户`, { code: 1 }));
-            }
-            if(operation === 'start') {
-              // 绑定
-              relation.getCurrentRelation(userId1)
-                .then(relationInfo1 => {
-                  // 检验userID1当前是否已绑定情侣
-                  if(relationInfo1.length && !relationInfo1[0].relationStopTime) {
-                    return res.send(utils.buildResData('userId1已绑定情侣', { code: 1 }));
-                  } else {
-                    relation.getCurrentRelation(userId2)
-                      .then(relationInfo2 => {
-                        // 检验userID2当前是否已绑定情侣
-                        if(relationInfo2.length && !relationInfo2[0].relationStopTime) {
-                          return res.send(utils.buildResData('userId2已绑定情侣', { code: 1 }));
-                        } else {
-                          relation.getRelation(userId1, userId2)
-                            .then(relationInfo => {
-                              if(relationInfo.length === 0){
-                                // 创建关系操作
-                                const time = `${utils.getDate()} ${utils.getTime()}`;
-                                relation.startRelation(userId1, userId2, time) 
-                                  .then(result => {
-                                    if(result.affectedRows === 1) {
-                                      res.send(utils.buildResData('创建关系成功', { code: 0 , date: { userId1, userId2 } }));                                
-                                    }
-                                  })
-                                  .catch(err => utils.sqlErr(err, res));
-                              } else {
-                                // 更新关系操作
-                                relation.updateRelation(userId1, userId2)
-                                  .then(result => {
-                                    if(result.affectedRows === 1) {
-                                      res.send(utils.buildResData('重启关系成功', { code: 0 , date: { userId1, userId2 } }));                                
-                                    }
-                                  })
-                                  .catch(err => utils.sqlErr(err, res));
-                              }
-                            })
-                            .catch(err => utils.sqlErr(err, res));
-                        }
-                      })
-                      .catch(err => utils.sqlErr(err, res));
-                  }
-                })
-                .catch(err => utils.sqlErr(err, res));
-            } else {
-              // 解绑
-              relation.getRelation(userId1, userId2)
-                .then(relationInfo => {
-                  if(!relationInfo[0]) {
-                    return res.send(utils.buildResData(`userId1=${userId1}的用户与userId2=${userId2}的用户无关系记录`, { code: 1 }));
-                  } else {
-                    // 解除绑定
-                    const time = `${utils.getDate()} ${utils.getTime()}`;
-                    relation.updateRelation(userId1, userId2, time)
-                      .then(result => {
-                        if(result.affectedRows === 1) {
-                          res.send(utils.buildResData('解绑操作成功', { code: 0 , date: { userId1, userId2, time } }));
-                        } else {
-                          res.send(utils.buildResData(`解绑操作失败，这段关系已经被中止}`, { code: 1 , date: { userId1, userId2, time } }));
-                        }
-                      })
-                      .catch(err => utils.sqlErr(err, res));
-                  }
-                })
-                .catch(err => utils.sqlErr(err, res));   
-            }
-          })
-          .catch(err => utils.sqlErr(err, res));
-      })
-      .catch(err => utils.sqlErr(err, res));
-  }
+  let { loveId1, loveId2,  operation } = req.body;
+  let userId1, userId2;
+  user.getUserIdByLoveId(loveId1)
+    .then(userIdResult1 => {
+      if(userIdResult1.length === 0) {
+        return res.send(utils.buildResData(`不存在loveId=${loveId1}的用户`, { code: 1 }));
+      } else {
+        userId1 = userIdResult1[0].userId;
+      }
+      user.getUserIdByLoveId(loveId2)
+        .then(userIdResult2 => {
+          if(userIdResult2.length === 0) {
+            return res.send(utils.buildResData(`不存在loveId=${loveId2}的用户`, { code: 1 }));
+          } else {
+            userId2 = userIdResult2[0].userId;
+          }
+          userId1 = Number(userId1);
+          userId2 = Number(userId2);
+          // 检验数据
+          if((!Number.isInteger(userId1)) || (userId1 < 0)) {
+            return res.send(utils.buildResData('userId1不合法', { code: 1 }));
+          } else if((!Number.isInteger(userId2)) || (userId2 < 0)){
+            return res.send(utils.buildResData('userId2不合法', { code: 1 }));
+          } else if(!(operation === 'start' || operation === 'stop')) {
+            return res.send(utils.buildResData('operation不合法', { code: 1 }));
+          } else {
+            user.getUserInfoByUserId(userId1)
+              .then(userInfo1 => {
+                if(userInfo1.length === 0) {
+                  // userId1用户不存在
+                  return res.send(utils.buildResData(`不存在userId=${userId1}的用户`, { code: 1 }));
+                }
+                user.getUserInfoByUserId(userId2)
+                  .then(userInfo2 => {
+                    if(userInfo2.length === 0) {
+                      // userId2用户不存在
+                      return res.send(utils.buildResData(`不存在userId=${userId2}的用户`, { code: 1 }));
+                    }
+                    if(operation === 'start') {
+                      // 绑定
+                      relation.getCurrentRelation(userId1)
+                        .then(relationInfo1 => {
+                          // 检验userID1当前是否已绑定情侣
+                          if(relationInfo1.length && !relationInfo1[0].relationStopTime) {
+                            return res.send(utils.buildResData('userId1已绑定情侣', { code: 1 }));
+                          } else {
+                            relation.getCurrentRelation(userId2)
+                              .then(relationInfo2 => {
+                                // 检验userID2当前是否已绑定情侣
+                                if(relationInfo2.length && !relationInfo2[0].relationStopTime) {
+                                  return res.send(utils.buildResData('userId2已绑定情侣', { code: 1 }));
+                                } else {
+                                  relation.getRelation(userId1, userId2)
+                                    .then(relationInfo => {
+                                      if(relationInfo.length === 0){
+                                        // 创建关系操作
+                                        const time = `${utils.getDate()} ${utils.getTime()}`;
+                                        relation.startRelation(userId1, userId2, time) 
+                                          .then(result => {
+                                            if(result.affectedRows === 1) {
+                                              res.send(utils.buildResData('创建关系成功', { code: 0 , userId1, userId2 }));                                
+                                            }
+                                          })
+                                          .catch(err => utils.sqlErr(err, res));
+                                      } else {
+                                        // 更新关系操作
+                                        relation.updateRelation(userId1, userId2)
+                                          .then(result => {
+                                            if(result.affectedRows === 1) {
+                                              res.send(utils.buildResData('重启关系成功', { code: 0 , userId1, userId2 }));                                
+                                            }
+                                          })
+                                          .catch(err => utils.sqlErr(err, res));
+                                      }
+                                    })
+                                    .catch(err => utils.sqlErr(err, res));
+                                }
+                              })
+                              .catch(err => utils.sqlErr(err, res));
+                          }
+                        })
+                        .catch(err => utils.sqlErr(err, res));
+                    } else {
+                      // 解绑
+                      relation.getRelation(userId1, userId2)
+                        .then(relationInfo => {
+                          if(!relationInfo[0]) {
+                            return res.send(utils.buildResData(`userId1=${userId1}的用户与userId2=${userId2}的用户无关系记录`, { code: 1 }));
+                          } else {
+                            // 解除绑定
+                            const time = `${utils.getDate()} ${utils.getTime()}`;
+                            relation.updateRelation(userId1, userId2, time)
+                              .then(result => {
+                                if(result.affectedRows === 1) {
+                                  res.send(utils.buildResData('解绑操作成功', { code: 0 , userId1, userId2, time }));
+                                } else {
+                                  res.send(utils.buildResData(`解绑操作失败，这段关系已经被中止}`, { code: 1 , userId1, userId2, time }));
+                                }
+                              })
+                              .catch(err => utils.sqlErr(err, res));
+                          }
+                        })
+                        .catch(err => utils.sqlErr(err, res));   
+                    }
+                  })
+                  .catch(err => utils.sqlErr(err, res));
+              })
+              .catch(err => utils.sqlErr(err, res));
+          }
+        })
+        .catch(err => utils.sqlErr(err, res));
+    })
+    .catch(err => utils.sqlErr(err, res));
 });
 
 /* 
@@ -308,7 +364,7 @@ router.get('/status', (req, res, next) => {
   // 获取数据
   let {userId, page} = url.parse(req.url, true).query;
   userId = Number(userId);
-  page = Number(page);
+  page = Number(page) || 0;
   // 检验数据
   if((!Number.isInteger(userId)) || (userId < 0)) {
     return res.send(utils.buildResData('userId不合法', { code: 1 }));
@@ -325,9 +381,9 @@ router.get('/status', (req, res, next) => {
             element.statusTime = `${utils.formatDate(element.statusTime).date} ${utils.formatDate(element.statusTime).time}`;
             return element;
           });
-          res.send(utils.buildResData(`获取userId=${userId}&page=${page}的status成功`, { code: 0, date:statusInfo }));
+          res.send(utils.buildResData(`获取userId=${userId}&page=${page}的status成功`, { code: 0, status:statusInfo }));
         } else {
-          res.send(utils.buildResData(`没有记录`, { code: 0, date:statusInfo }));
+          res.send(utils.buildResData(`没有记录`, { code: 0, status:statusInfo }));
         }      
       })
       .catch(err => utils.sqlErr(err, res));
@@ -348,7 +404,7 @@ router.post('/create_status', function(req, res, next) {
   } else if(!statusContent) {
     return res.send(utils.buildResData('statusContent为空', { code: 1 }));
   } else if(statusTime > new Date()){
-    return res.send(utils.buildResData('statusTime错误', { code: 1 }));
+    return res.send(utils.buildResData('statusTime错误，不能为未来的时间', { code: 1 }));
   } else {
     statusTime = `${utils.formatDate(statusTime).date} ${utils.formatDate(statusTime).time}`;
     status.createStatus(userId, statusContent, statusTime)
@@ -392,7 +448,7 @@ router.get('/plan', (req, res, next) => {
   // 获取数据
   let {relationId, page} = url.parse(req.url, true).query;
   relationId = Number(relationId);
-  page = Number(page);
+  page = Number(page) || 0;
   // 检验数据
   if((!Number.isInteger(relationId)) || (relationId < 0)) {
     return res.send(utils.buildResData('relationId不合法', { code: 1 }));
