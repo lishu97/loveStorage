@@ -1,6 +1,6 @@
 'use strict';
 
-const STATUS_CODE = require('../enums/status');
+const STATUS_CODE = require('../utils/status');
 
 module.exports.checkLogin = function(req, res, next) {
     if(!req.session.userId) {

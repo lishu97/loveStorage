@@ -3,10 +3,11 @@ import axios from 'axios';
 const urlMap = {
     signUp: '/api/sign_up',
     signIn: '/api/sign_in',
-    exit: '/api/exit',
+    exit: '/api/user/exit',
     loverInfo: '/api/lover_info',
     updateRelation: '/api/update_relation',
-
+    userInfo: '/api/user/info',
+    
     status: '/api/status',
     createStatus: '/api/create_status',
     deleteStatus: '/api/delete_status',

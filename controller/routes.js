@@ -1,3 +1,4 @@
+'use strict';
 const api = require('./api');
 const index = require('./index');
 

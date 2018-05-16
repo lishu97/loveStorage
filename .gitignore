@@ -1,7 +1,5 @@
 # folders
 node_modules/
 .vscode/
-public/js
-public/css
-public/img
+public/
 config/
