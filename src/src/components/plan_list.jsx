@@ -18,7 +18,7 @@ class PlanList extends React.Component {
     render() {
         const {data} = this.props;
         return (
-            <div>
+            <div className='plan'>
                 <AnniversaryForm onSubmit={this.handleSubmit}/>
                 <List
                     itemLayout="horizontal"

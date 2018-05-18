@@ -34,7 +34,7 @@ export function fetchPlanList(relationId) {
             if(res.data.data.code === 0) {
                 return dispatch(updatePlanList(res.data.data.data));
             }
-            return message.error(res.data.msg);
+            return message.error('请先绑定情侣再使用此功能,否则将无法使用');
         });
     };
 }
@@ -51,7 +51,7 @@ export function deletePlan(planId, relationId) {
                     return message.success('删除成功');
                 }
                 return message.error(res.data.msg);
-            });
+            });      
     };
 }
 
@@ -67,7 +67,10 @@ export function addPlan(values, relationId) {
                     dispatch(fetchPlanList(relationId));
                     return message.success('新增计划成功');
                 }
+                if(res.data.msg === '不存在relationId=0的relation') {
+                    return message.error('请先绑定情侣再使用此功能,否则将无法使用');
+                }
                 return message.error(res.data.msg);
-            });
+            });        
     };
 }

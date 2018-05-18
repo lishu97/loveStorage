@@ -15,7 +15,7 @@ class Anniversary extends React.Component {
     render() {
         const {data} = this.props;
         return (
-            <div>
+            <div className="anniversary">
                 <AnniversaryForm onSubmit={this.handleSubmit}/>
                 <List
                     itemLayout="horizontal"
@@ -24,13 +24,13 @@ class Anniversary extends React.Component {
                         <List.Item
                         >
                             <List.Item.Meta
-                                title={item.anniversaryContent}
-                                description={(
+                                title={(
                                     <div>
                                         <span>{moment(item.anniversaryTime).format('YYYY-MM-DD')}</span>
                                         <Icon style={{cursor: 'pointer', marginLeft: '10px'}} type="delete" onClick={() => {this.handleDelete(item.anniversaryId);}}/>
                                     </div>
                                 )}
+                                description={item.anniversaryContent}
                             />
                         </List.Item>
                     )}

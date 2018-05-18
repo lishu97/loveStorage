@@ -54,16 +54,16 @@ class Index extends React.Component {
             'box': <BoxList data={boxList} onSubmit={this.handleAddBoxItem} avatar={user.avatar} nick={user.nickname} onDelete={this.handleDeleteBoxItem}/>,
             'schedule': <PlanList data={planList} onSubmit={this.handleAddPlan} onDelete={this.handleDeletePlan} onChangePlan={this.handleChangePlanStatus}/>,
             'annniversary': <Anniversary data={anniversaryList} onSubmit={this.handleAddAnniversary} onDelete={this.handleDeleteAnniversary}/>,
-            'personInfo': <Profile userInfo={user} title="个人信息"/>,
+            'personInfo': <Profile userInfo={user} isShowLoveId={true} title="个人信息"/>,
             'bind': <BindLove onSubmit={this.handleBindLove} showLove={parseInt(user.relationId) === 0 ? false : true} loveInfo={loveInfo}/>
         };
         return (
             <Layout>
-                <Sider style={{ overflow: 'auto', height: '100vh', position: 'fixed', left: 0 }}>
-                    <Menu theme="dark" mode="inline" defaultSelectedKeys={['box']} onClick={this.handleClickMenu}>
-                        <Menu.Item key="personInfo">
-                            <Avatar src={user.avatar}/> 
-                            <span>{user.nickname}</span>
+                <Sider style={{ overflow: 'hidden', height: '100vh', position: 'fixed', left: 0 }}>
+                    <Menu mode="inline" defaultSelectedKeys={['box']} onClick={this.handleClickMenu}>
+                        <Menu.Item key="personInfo" className="userInfoMenu">
+                            <Avatar src={user.avatar} className="avatar"/> 
+                            <span className="nickname">{user.nickname}</span>
                         </Menu.Item>
                         <Menu.Item key="box">
                             <Icon type="hdd" />
@@ -92,7 +92,7 @@ class Index extends React.Component {
                     </Menu>
                 </Sider>
                 <Layout style={{ marginLeft: 200, minHeight: '100vh'}}>
-                    <Content style={{ padding: '5px', overflow: 'initial'}}>
+                    <Content style={{ padding: '20px 20px 0', overflow: 'initial' }}>
                         {contentMap[curMenu]}
                     </Content>
                     <Footer style={{ textAlign: 'center' }}>

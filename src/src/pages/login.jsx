@@ -5,7 +5,7 @@ import {Card} from 'antd';
 
 import SignUpForm from '../components/form/signup_form';
 import LoginForm from '../components/form/login_form';
-import Particle from '../components/particle';
+// import Particle from '../components/particle';
 
 import {login, signUp} from '../actions/user';
 
@@ -42,7 +42,7 @@ class LoginPage extends React.Component {
         ];
         return (
             <div className="login-page">
-                <Particle/>
+                {/*<Particle/>*/}
                 <div className="login-dig">
                     <Card tabList={tabList} onTabChange={this.handleTabChange} >
                         {tabContent[this.state.curTabKey]}

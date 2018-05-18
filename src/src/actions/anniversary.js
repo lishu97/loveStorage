@@ -18,7 +18,7 @@ export function fetchAnniversaryList(relationId) {
             if(res.data.data.code === 0) {
                 return dispatch(updateAnniversaryList(res.data.data.data));
             }
-            message.error(res.data.msg);
+            message.error('请先绑定情侣再使用此功能,否则将无法使用');
         });
     };
 }
@@ -35,6 +35,9 @@ export function addAnniversary(values, relationId) {
                     dispatch(fetchAnniversaryList(relationId));
                     return message.success('新增纪念日成功');
                 }
+                if(res.data.msg === '不存在relationId=0的relation') {
+                    return message.error('请先绑定情侣再使用此功能,否则将无法使用');
+                }
                 return message.error(res.data.msg);
             });
     };
@@ -50,6 +53,9 @@ export function delAnniversary(relationId, id) {
                 if(res.data.data.code === 0) {
                     dispatch(fetchAnniversaryList(relationId));
                     return message.success('删除纪念日成功');
+                }
+                if(res.data.msg === '不存在relationId=0的relation') {
+                    return message.error('请先绑定情侣再使用此功能,否则将无法使用');
                 }
                 return message.error(res.data.msg);
             });

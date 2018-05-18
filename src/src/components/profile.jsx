@@ -4,12 +4,13 @@ import propTypes from 'prop-types';
 import {Card, Avatar} from 'antd';
 class Profile extends React.Component {
     render() {
-        const {userInfo, title, extra} = this.props;
+        const {userInfo, title, extra, isShowLoveId} = this.props;
         return (
             <Card
                 title={title}
                 hoverable={true}
                 extra={extra ? extra : null}
+                className="userInfo"
             >
                 <Avatar src={userInfo.avatar}/>
                 <div>
@@ -21,13 +22,11 @@ class Profile extends React.Component {
                     <span>{userInfo.nickname}</span>
                 </div>
                 <div>
-                    <span>情侣ID：</span>
-                    <span>{userInfo.loveId}</span>
-                </div>
-                <div>
                     <span>注册日期：</span>
                     <span>{userInfo.regTime}</span>
                 </div>
+                {isShowLoveId ? <div><span>情侣ID：</span><span>{userInfo.loveId}</span></div> : <div></div>}
+                
             </Card>
         );
     }
@@ -35,6 +34,7 @@ class Profile extends React.Component {
 
 Profile.propTypes = {
     userInfo: propTypes.object,
+    isShowLoveId: propTypes.bool,
     title: propTypes.string,
     extra: propTypes.element
 };

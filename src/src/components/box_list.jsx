@@ -19,22 +19,25 @@ class BoxList extends React.Component {
         const {data, avatar, nick} = this.props;
         const {text} = this.state;
         return (
-            <div>
+            <div className="box">
                 <TextArea value={text} onChange={(e) => {this.setState({text: e.target.value});}}/>
                 <Button type="primary" onClick={this.handleSubmit}>提交</Button>
                 <List
                     itemLayout="horizontal"
                     dataSource={data}
                     renderItem={item => (
-                        <List.Item
-                        >
+                        <List.Item>
                             <List.Item.Meta
-                                avatar={<Avatar src={avatar} />}
                                 title={(
                                     <div>
-                                        <span>{nick}</span>
-                                        <span>{item.statusTime}</span>
-                                        <Icon style={{cursor: 'pointer', marginLeft: '10px'}} type="delete" onClick={() => {this.handleDelete(item.statusId);}}/>
+                                        <div style={{ float: 'left' }}>
+                                            <Avatar src={avatar} />
+                                        </div>
+                                        <div style={{ paddingLeft: '50px' }}>
+                                            <span className="nickname">{nick}</span>
+                                            <span className="statustime">{item.statusTime}</span>
+                                            <Icon style={{cursor: 'pointer', marginLeft: '10px'}} type="delete" onClick={() => {this.handleDelete(item.statusId);}}/>
+                                        </div>
                                     </div>
                                 )}
                                 description={item.statusContent}
