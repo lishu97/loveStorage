@@ -34,6 +34,7 @@ export function fetchPlanList(relationId) {
             if(res.data.data.code === 0) {
                 return dispatch(updatePlanList(res.data.data.data));
             }
+            dispatch(updatePlanList([]));
             return message.error('请先绑定情侣再使用此功能,否则将无法使用');
         });
     };

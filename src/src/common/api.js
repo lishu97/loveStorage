@@ -5,6 +5,7 @@ const urlMap = {
     signIn: '/api/sign_in',
     exit: '/api/user/exit',
     loverInfo: '/api/lover_info',
+    relationInfo: '/api/relation_info',
     updateRelation: '/api/update_relation',
     userInfo: '/api/user/info',
     

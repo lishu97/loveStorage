@@ -1,13 +1,12 @@
 import React from 'react';
 import propTypes from 'prop-types';
 import { connect } from 'react-redux';
-import {Card} from 'antd';
+import { Card } from 'antd';
 
 import SignUpForm from '../components/form/signup_form';
 import LoginForm from '../components/form/login_form';
-// import Particle from '../components/particle';
 
-import {login, signUp} from '../actions/user';
+import { login, signUp } from '../actions/user';
 
 function mapProps(state) {
     return {

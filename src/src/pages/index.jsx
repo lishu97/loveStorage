@@ -12,7 +12,7 @@ import {fetchUserInfo, bindLove, fetchLoveInfo, exit} from '../actions/user';
 import {fetchBoxList, createBoxList, delBoxItem} from '../actions/box_list';
 import {fetchPlanList, deletePlan, addPlan, changePlanStatus} from '../actions/plan';
 import {fetchAnniversaryList, delAnniversary, addAnniversary} from '../actions/anniversary';
-
+// import {fetchRelationInfo} from '../actions/relation';
 
 import { Layout, Menu, Icon, Avatar, Modal } from 'antd';
 const { Content, Footer, Sider } = Layout;
@@ -21,6 +21,7 @@ function propMap(state) {
     return {
         loveInfo: state.user.loveInfo,
         user: state.user.userInfo,
+        relationInfo: state.user.relationInfo,
         boxList: state.boxList.list,
         planList: state.plan.list,
         anniversaryList: state.anniversary.list
@@ -43,9 +44,10 @@ class Index extends React.Component {
         this.handleBindLove = this.handleBindLove.bind(this);
     }
     componentDidMount() {
-        const {dispatch} = this.props;
+        const { dispatch } = this.props;
         dispatch(fetchUserInfo());
         dispatch(fetchBoxList());
+        // dispatch(fetchRelationInfo());
     }
     render() {
         const {curMenu} = this.state;

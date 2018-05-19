@@ -13,10 +13,7 @@ class Profile extends React.Component {
                 className="userInfo"
             >
                 <Avatar src={userInfo.avatar}/>
-                <div>
-                    <span>用户名：</span>
-                    <span>{userInfo.username}</span>
-                </div>
+                {isShowLoveId ? <div><span>用户名：</span><span>{userInfo.username}</span></div> : <div></div>}
                 <div>
                     <span>昵称：</span>
                     <span>{userInfo.nickname}</span>
@@ -25,8 +22,7 @@ class Profile extends React.Component {
                     <span>注册日期：</span>
                     <span>{userInfo.regTime}</span>
                 </div>
-                {isShowLoveId ? <div><span>情侣ID：</span><span>{userInfo.loveId}</span></div> : <div></div>}
-                
+                {isShowLoveId ? <div><span>情侣ID：</span><span>{userInfo.loveId}</span></div> : <div></div>}                
             </Card>
         );
     }

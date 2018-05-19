@@ -397,7 +397,34 @@ router.post('/update_relation', function(req, res, next) {
       .catch(err => utils.sqlErr(err, res));
   });
   
-
+/* 
+  查询relationInfo
+*/
+router.get('/relation_info', (req, res, next) => {
+    // 获取数据
+    let { userId } = url.parse(req.url, true).query;
+    // web 直接从session中取
+    if(req.query.web) {
+        userId = req.session.userId;
+    }
+    userId = Number(userId);
+    
+    // 检验数据
+    if ((!parseInt(userId)) || (userId < 0)) {
+        return res.send(utils.buildResData('userId不合法', { code: 1 }));
+    } else {
+        relation.getCurrentRelation(userId)
+            .then(statusInfo => {
+                if (statusInfo.length > 0) {
+                    statusInfo[0].relationStartTime = `${utils.formatDate(statusInfo[0].relationStartTime).date} ${utils.formatDate(statusInfo[0].relationStartTime).time}`;
+                    res.send(utils.buildResData(`获取userId=${userId}的relationInfo成功`, { code: 0, relationInfo: statusInfo[0] }));
+                } else {
+                    res.send(utils.buildResData(`没有记录`, { code: 0, relationInfo: {} }));
+                }
+            })
+            .catch(err => utils.sqlErr(err, res));
+    }
+});
 /* 
   查询status
 */
@@ -453,8 +480,6 @@ router.post('/create_status', function (req, res, next) {
         return res.send(utils.buildResData('userId不符合规范', { code: 1 }));
     } else if (!statusContent) {
         return res.send(utils.buildResData('statusContent为空', { code: 1 }));
-    } else if (statusTime > new Date()) {
-        return res.send(utils.buildResData('statusTime错误，不能为未来的时间', { code: 1 }));
     } else {
         statusTime = `${utils.formatDate(statusTime).date} ${utils.formatDate(statusTime).time}`;
         status.createStatus(userId, statusContent, statusTime)

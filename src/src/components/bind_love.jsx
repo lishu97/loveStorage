@@ -15,10 +15,10 @@ class BindLove extends React.Component {
     }
     render() {
         const { value } = this.state;
-        const {isShowLoveId, loveInfo} = this.props;
+        const {showLove, loveInfo, relationInfo} = this.props;
         return (
             <div className='bindLove'>
-                {isShowLoveId ? <Profile userInfo={loveInfo} showLoveId={false} title="情侣信息" extra={<Button onClick={() => this.handleSubmit('stop')}>解除情侣</Button>}/> : (
+                {showLove ? <Profile userInfo={loveInfo} relationInfo={relationInfo} isShowLoveId={false} title="情侣信息" extra={<Button onClick={() => this.handleSubmit('stop')}>解除情侣</Button>}/> : (
                     <div className='loverInfo'>
                         <div>
                             <span>请输入对方的情侣ID</span>
@@ -62,7 +62,8 @@ class BindLove extends React.Component {
 }
 BindLove.propTypes = {
     onSubmit: propTypes.func,
-    isShowLoveId: propTypes.bool,
-    loveInfo: propTypes.object
+    showLove: propTypes.bool,
+    loveInfo: propTypes.object,
+    relationInfo: propTypes.object
 };
 export default BindLove;
