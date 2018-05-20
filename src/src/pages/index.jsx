@@ -7,6 +7,7 @@ import Anniversary from '../components/anniversary';
 import PlanList from '../components/plan_list';
 import Profile from '../components/profile';
 import BindLove from '../components/bind_love';
+import About from '../components/about';
 
 import {fetchUserInfo, bindLove, fetchLoveInfo, exit} from '../actions/user';
 import {fetchBoxList, createBoxList, delBoxItem} from '../actions/box_list';
@@ -57,7 +58,8 @@ class Index extends React.Component {
             'schedule': <PlanList data={planList} onSubmit={this.handleAddPlan} onDelete={this.handleDeletePlan} onChangePlan={this.handleChangePlanStatus}/>,
             'annniversary': <Anniversary data={anniversaryList} onSubmit={this.handleAddAnniversary} onDelete={this.handleDeleteAnniversary}/>,
             'personInfo': <Profile userInfo={user} isShowLoveId={true} title="个人信息"/>,
-            'bind': <BindLove onSubmit={this.handleBindLove} showLove={parseInt(user.relationId) === 0 ? false : true} loveInfo={loveInfo}/>
+            'bind': <BindLove onSubmit={this.handleBindLove} showLove={parseInt(user.relationId) === 0 ? false : true} loveInfo={loveInfo}/>,
+            'about': <About />
         };
         return (
             <Layout>
