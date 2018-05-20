@@ -1,6 +1,6 @@
 const REG_EXP = {
-    username: /^[a-zA-Z0-9_]{1,17}$/,
-    password: /^[a-zA-Z0-9_]{1,17}$/,
+    username: /^[a-zA-Z0-9_]{3,17}$/,
+    password: /^.{3,17}$/,
 
 };
 module.exports = REG_EXP;

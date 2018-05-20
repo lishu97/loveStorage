@@ -16,7 +16,7 @@ class Anniversary extends React.Component {
         const {data} = this.props;
         return (
             <div className="anniversary">
-                <AnniversaryForm onSubmit={this.handleSubmit}/>
+                <AnniversaryForm onSubmit={this.handleSubmit} type="anniversary"/>
                 <List
                     itemLayout="horizontal"
                     dataSource={data}

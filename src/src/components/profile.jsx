@@ -13,7 +13,7 @@ class Profile extends React.Component {
                 className="userInfo"
             >
                 <Avatar src={userInfo.avatar}/>
-                {isShowLoveId ? <div><span>用户名：</span><span>{userInfo.username}</span></div> : <div></div>}
+                {isShowLoveId ? <div><span>帐号：</span><span>{userInfo.username}</span></div> : <div></div>}
                 <div>
                     <span>昵称：</span>
                     <span>{userInfo.nickname}</span>

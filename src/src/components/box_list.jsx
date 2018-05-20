@@ -20,8 +20,8 @@ class BoxList extends React.Component {
         const {text} = this.state;
         return (
             <div className="box">
-                <TextArea value={text} onChange={(e) => {this.setState({text: e.target.value});}}/>
-                <Button type="primary" onClick={this.handleSubmit}>提交</Button>
+                <TextArea value={text} placeholder="记录此时此刻的想法..." onChange={(e) => {this.setState({text: e.target.value});}}/>
+                <Button type="primary" onClick={this.handleSubmit}>保存</Button>
                 <List
                     itemLayout="horizontal"
                     dataSource={data}

@@ -4,6 +4,7 @@ import propTypes from 'prop-types';
 import { Form, Input, Spin, Button} from 'antd';
 
 import AvatarUpload from '../avatar_upload';
+
 const FormItem = Form.Item;
 class signUpForm extends React.Component {
     constructor(props) {
@@ -16,7 +17,7 @@ class signUpForm extends React.Component {
         return (
             <Spin spinning={loading} tip="注册中">
                 <Form layout="vertical">
-                    <FormItem label="用户名"
+                    <FormItem label="帐号"
                         required={true}
                     >
                         {
@@ -24,13 +25,12 @@ class signUpForm extends React.Component {
                                 rules: [
                                     {
                                         required: true,
-                                        min: 3,
-                                        max: 15,
-                                        message: '用户名格式错误'
+                                        pattern: /^[a-zA-Z0-9_]{3,15}$/,
+                                        message: '帐号格式错误'
                                     }
                                 ]
                             })(
-                                <Input type="text" />
+                                <Input type="text" placeholder="3-15位字母、数字或下划线"/>
                             )
                         }
                     </FormItem>
@@ -40,11 +40,12 @@ class signUpForm extends React.Component {
                                 rules: [
                                     {
                                         required: true,
-                                        message: '请填写密码'
+                                        pattern: /^.{3,15}$/,
+                                        message: '密码格式错误'
                                     }
                                 ]
                             })(
-                                <Input type="password" />
+                                <Input type="password"  placeholder="3-15位字符"/>
                             )
                         }
                     </FormItem>
@@ -63,7 +64,7 @@ class signUpForm extends React.Component {
                                     }
                                 ]
                             })(
-                                <Input type="password" />
+                                <Input type="password" placeholder='与密码相同'/>
                             )
                         }
                     </FormItem>
@@ -73,11 +74,13 @@ class signUpForm extends React.Component {
                                 rules: [
                                     {
                                         required: true,
-                                        message: '请填写昵称'
+                                        min: 3,
+                                        max: 15,
+                                        message: '昵称格式错误'
                                     }
                                 ]
                             })(
-                                <Input type="text" />
+                                <Input type="text" placeholder='3-15个字符或汉字'/>
                             )
                         }
                     </FormItem>

@@ -19,7 +19,7 @@ class PlanList extends React.Component {
         const {data} = this.props;
         return (
             <div className='plan'>
-                <AnniversaryForm onSubmit={this.handleSubmit}/>
+                <AnniversaryForm onSubmit={this.handleSubmit} type="plan"/>
                 <List
                     itemLayout="horizontal"
                     dataSource={data}

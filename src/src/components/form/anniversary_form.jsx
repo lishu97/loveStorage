@@ -11,11 +11,17 @@ class AnniversaryForm extends React.Component {
         this.handleSubmit = this.handleSubmit.bind(this);
     }
     render() {
-        const {form} = this.props;
+        const {form, type} = this.props;
         const {getFieldDecorator} = form;
+        let title;
+        if(type === 'plan') {
+            title = '计划';
+        } else if(type === 'anniversary') {
+            title = '纪念';
+        }
         return (
             <Form layout="inline">
-                <FormItem label="时间"
+                <FormItem label={title + '日期'}
                     required={true}
                 >
                     {
@@ -23,16 +29,15 @@ class AnniversaryForm extends React.Component {
                             rules: [
                                 {
                                     required: true,
-                                    message: '请选择时间'
+                                    message: '请选择日期'
                                 }
                             ],
                         })(
-                            <DatePicker/>
+                            <DatePicker placeholder="选择日期"/>
                         )
                     }
                 </FormItem>
-                <FormItem label="内容"
-                >
+                <FormItem label={title + '内容'}>
                     {
                         getFieldDecorator('detail', {
                             rules: [
@@ -40,10 +45,8 @@ class AnniversaryForm extends React.Component {
                                     required: true,
                                     message: '请输入内容'
                                 }
-                            ],
-                        })(
-                            <Input/>
-                        )
+                            ]
+                        })(<Input placeholder={type === 'plan' ? '做点什么...' : '有意义的一天...'}/>)
                     }
                 </FormItem>
                 <FormItem>
@@ -64,7 +67,8 @@ class AnniversaryForm extends React.Component {
 }
 AnniversaryForm.propTypes = {
     form: propTypes.object,
-    onSubmit: propTypes.func
+    onSubmit: propTypes.func,
+    type: propTypes.string
 };
 
 export default Form.create()(AnniversaryForm);
