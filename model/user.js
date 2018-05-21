@@ -18,8 +18,8 @@ module.exports.createUser = function (regTime, username, password, nickname, ava
 };
 
 module.exports.addOpenID = function (username, openId) {
-    const sql = `INSERT INTO user (openId) 
-    VALUES ('${openId}') WHERE username = '${username}'`;
+    const sql = `UPDATE user SET openId='${openId}' 
+        WHERE username='${username}'`;
     return new Promise(function (resolve, reject) {
         pool.query(sql, function (err, result) {
             if (err) {

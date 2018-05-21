@@ -1,0 +1,17 @@
+<!--page/index/index.wxml-->
+<block wx:for="{{statusList}}">
+  <view class="{{'itemContainer ' + item.statusId}}" id="index">
+    <view class='itemHeader'>
+      <view class='avatar'>
+        <image src='{{userInfo.avatarUrl}}'></image>
+      </view>
+      <view class='userInfo'>
+        <view class='nickname'>{{this.data}}</view>
+        <view class='statusTime'>{{item.statusTime}}</view>
+        <view bindtap='deleteStatus' id="{{item.statusId}}"><text class='iconfont icon-shanchu'></text></view>
+      </view>
+    </view>
+    <view class='statusContent'>{{item.statusContent}}</view>
+  </view>
+</block>
+<view class='addStatus' bindtap="addStatus"><text class='iconfont icon-tianjia'></text></view>

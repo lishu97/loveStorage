@@ -51,9 +51,9 @@ router.get('/wx/onlogin', (req, res, next) => {
             user.getUserInfoByOpenId(openid)
                 .then(userInfo => {
                     if (userInfo.length === 0) {
-                        return res.send(utils.buildResData('请绑定username与openId', { code: 0, msg: 'bind' }));
+                        return res.send(utils.buildResData('请绑定username与openId', { code: 0, openId: openid, msg: 'bind' }));
                     } else {
-                        return res.send(utils.buildResData('登录成功', { code: 0, sessionId: req.session.id, ...userInfo[0] }));
+                        return res.send(utils.buildResData('登录成功', { code: 0, openId: openid, userInfo: userInfo[0] }));
                     }
                 })
                 .catch(err => utils.sqlErr(err, res));
@@ -66,17 +66,40 @@ router.get('/wx/onlogin', (req, res, next) => {
 /* 
   微信：用户绑定用户名
 */
-router.post('/bind_username', (req, res, next) => {
+router.post('/wx/bind', (req, res, next) => {
     // 获取数据
-    let { username, sessionId } = req.body;
-    session.getSessionBySessionId(sessionId)
-        .then(sessionInfo => {
-            if (sessionInfo.length === 0) {
-                return res.send(utils.buildResData('已绑定用户名', { code: 1, userInfo: userInfo[0] }));
+    let { username, password, openId } = req.body;
+    user.getUserInfoByUsername(username)
+        .then(getUserInfoByUsername_ret => {
+            if(getUserInfoByUsername_ret.length === 0) {
+                return res.send(utils.buildResData('此用户不存在', { code: 1 }));
             } else {
-                user.addOpenID(username, sessionInfo[0].openId)
+                user.getUserPassword(username)
+                    .then(getUserPassword_ret => {
+                        if(!password === getUserPassword_ret[0].password) {
+                            return res.send(utils.buildResData('用户名或密码错误', { code: 1 }));
+                        } else {
+                            user.addOpenID(username, openId)
+                                .then(addOpenId_ret => {
+                                    if(addOpenId_ret.changedRows === 1){
+                                        user.getUserInfoByOpenId(openId)
+                                            .then(getUserInfoByOpenId_ret => {
+                                                const userInfo = getUserInfoByOpenId_ret[0]
+                                                return res.send(utils.buildResData('绑定成功', { code: 0, userInfo }));
+                                            })
+                                            .catch(err => utils.sqlErr(err, res));
+                                    } else {
+                                        return res.send(utils.buildResData('绑定失败', { code: 1, addOpenId_ret }));                            
+                                    }
+                                })
+                                .catch(err => utils.sqlErr(err, res));
+                        }
+                    })
+                    .catch(err => utils.sqlErr(err, res));
             }
         })
+        .catch(err => utils.sqlErr(err, res));
+    
 })
 /*
    上传用户头像
@@ -119,16 +142,17 @@ router.post('/sign_up', (req, res, next) => {
                     // 录入数据库
                     user.createUser(regTime, username, password, nickname, avatar, loveId)
                         .then(result => {
+                            const userId = result.insertId
                             if (result.affectedRows === 1) {
                                 req.session.regTime = regTime;
-                                req.session.userId = result.insertId;
+                                req.session.userId = userId;
                                 req.session.username = username;
                                 req.session.nickname = nickname;
                                 req.session.avatar = avatar;
                                 req.session.loveId = loveId;
                                 // 注册时候默认写入relationId
                                 req.session.relationId = 0;
-                                return res.send(utils.buildResData('注册成功，请前往登录', { code: 0, regTime, username, nickname, avatar, loveId }));
+                                return res.send(utils.buildResData('注册成功，请前往登录', { code: 0, userInfo:{ regTime, userId, username, nickname, avatar, loveId } }));
                             }
                         })
                         .catch(err => utils.sqlErr(err, res));

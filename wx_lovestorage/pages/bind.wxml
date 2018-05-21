@@ -1,0 +1,46 @@
+<!--pages/bind.wxml-->
+<p>系统检查到您未绑定帐号,所有功能均无法正常使用</p>
+<p>可在“设置”->“绑定账号”重新打开该页面</p>
+<view>
+  <radio-group class="radio-group-operation" bindchange="radioChange">
+    <label>
+      <radio checked='true' />注册
+    </label>
+    <label>
+      <radio />绑定
+    </label>
+  </radio-group>
+</view>
+<view>
+  <form bindsubmit="formSubmit" bindreset="formReset">
+    <input class='input_text' type='text' placeholder='帐号：3-15位字母、数字或下划线' maxlength='17' confirm-type='next' name='username' />
+    <input class='input_text' type='text' placeholder='密码：3-15位字母、数字或下划线' password='true' maxlength='17' confirm-type='next' name='password' />
+    <block wx:if="{{operation === 'signUp'}}">
+      <input class='input_text' type='text' placeholder='重复密码：与密码相同' password='true' maxlength='17' confirm-type='next' name='passwordCheck' />
+      <input class='input_text' type='text' placeholder='昵称：3-15个字符' maxlength='32' confirm-type='next' name='nickname' />
+      <!-- <radio-group class="radio-group-sex">
+        <label>
+          <radio value="1" name='sex' />男
+        </label>
+        <label>
+          <radio value="0" name='sex' />女
+        </label>
+      </radio-group> 
+      <view class="section">
+        <view class="section__title">日期选择器</view>
+        <picker mode="date" value="{{date}}" start="1900-01-01" end="{{today}}" bindchange="bindDateChange" name='date'>
+          <view class="picker">
+            当前选择: {{date}}
+          </view>
+        </picker>
+      </view>
+      <input class='input_text' type='text' placeholder='邮箱：不超过32字节' maxlength='32' confirm-type='done' name='email' />-->
+    </block>
+    <button id="signUp" wx:if="{{operation === 'signUp'}}" form-type='submit' >注册</button>
+    <button id="bind" wx:else form-type='submit'>绑定</button>
+    <button form-type='reset'>重置</button>
+  </form>
+</view>
+<view wx:if="{{warn}}">  
+  {{warn}}  
+</view>  
