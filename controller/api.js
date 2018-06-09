@@ -114,7 +114,7 @@ router.post('/upload_avatar', function (req, res, next) {
         if (err) {
             return next(err);
         }
-        res.send(tool.buildResData({
+        res.send(utils.buildResData({
             path: `/img/${req.file.filename}`,
             success: true
         }));

@@ -15,9 +15,9 @@ class AvatarUpload extends React.Component {
         const {onChange} = this.props;
         if(info.file.response) {
             this.setState({
-                img: info.file.response.data.path
+                img: info.file.response.msg.path
             });
-            onChange(info.file.response.data.path);
+            onChange(info.file.response.msg.path);
         }
     }
     render() {

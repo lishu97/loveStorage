@@ -88,7 +88,7 @@ class signUpForm extends React.Component {
                         {
                             getFieldDecorator('avatar')(
                                 <AvatarUpload
-                                    action='/api/upload/avatar'
+                                    action='/api//upload_avatar'
                                 />
                             )
                         }
