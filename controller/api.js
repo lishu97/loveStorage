@@ -50,6 +50,7 @@ router.get('/wx/onlogin', (req, res, next) => {
             const openid = data.openid;
             user.getUserInfoByOpenId(openid)
                 .then(userInfo => {
+                    userInfo = utils.formatInfo(userInfo)
                     if (userInfo.length === 0) {
                         return res.send(utils.buildResData('请绑定username与openId', { code: 0, openId: openid, msg: 'bind' }));
                     } else {
@@ -362,7 +363,7 @@ router.post('/update_relation', function(req, res, next) {
                                                   .then(forRelationId => {
                                                     const relationId = forRelationId[0].relationId
                                                     req.session.relationId = relationId
-                                                    res.send(utils.buildResData('创建关系成功', { code: 0 , userId1, userId2, relationId }));        
+                                                    res.send(utils.buildResData('创建关系成功', { code: 0 , userId1, userId2, relationInfo: forRelationId[0] }));        
                                                   })
                                                   .catch(err => utils.sqlErr(err, res));                
                                               } else {
@@ -377,7 +378,7 @@ router.post('/update_relation', function(req, res, next) {
                                               if(result.affectedRows === 1) {
                                                 const relationId = relationInfo[0].relationId;
                                                 req.session.relationId = relationId;
-                                                res.send(utils.buildResData('重启关系成功', { code: 0 , userId1, userId2, relationId }));                                
+                                                res.send(utils.buildResData('重启关系成功', { code: 0 , userId1, userId2, relationInfo: relationInfo[0] }));                                
                                               }
                                             })
                                             .catch(err => utils.sqlErr(err, res));
