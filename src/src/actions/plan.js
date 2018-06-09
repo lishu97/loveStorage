@@ -32,7 +32,7 @@ export function fetchPlanList(relationId) {
             relationId
         }).then(function(res) {
             if(res.data.data.code === 0) {
-                return dispatch(updatePlanList(res.data.data.data));
+                return dispatch(updatePlanList(res.data.data.planList));
             }
             dispatch(updatePlanList([]));
             return message.error('请先绑定情侣再使用此功能,否则将无法使用');

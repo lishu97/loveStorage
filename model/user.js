@@ -67,7 +67,7 @@ module.exports.getUserInfoByUserId = function (userId) {
 };
 
 module.exports.getUserInfoByOpenId = function (openId) {
-    const sql = `SELECT userId,regTime,nickname,avatar,loveId FROM user WHERE openId = '${openId}'`;
+    const sql = `SELECT userId,regTime,username,nickname,avatar,loveId FROM user WHERE openId = '${openId}'`;
     return new Promise(function (resolve, reject) {
         pool.query(sql, function (err, result) {
             if (err) {

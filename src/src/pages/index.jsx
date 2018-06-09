@@ -99,9 +99,9 @@ class Index extends React.Component {
                     <Content style={{ padding: '20px 20px 0', overflow: 'initial' }}>
                         {contentMap[curMenu]}
                     </Content>
-                    <Footer style={{ textAlign: 'center' }}>
+                    {/*<Footer style={{ textAlign: 'center' }}>
                         LoveStorage Created by LiShu
-                    </Footer>
+                    </Footer>*/}
                 </Layout>
             </Layout>
         );

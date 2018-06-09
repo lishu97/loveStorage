@@ -53,7 +53,11 @@ router.get('/wx/onlogin', (req, res, next) => {
                     if (userInfo.length === 0) {
                         return res.send(utils.buildResData('请绑定username与openId', { code: 0, openId: openid, msg: 'bind' }));
                     } else {
-                        return res.send(utils.buildResData('登录成功', { code: 0, openId: openid, userInfo: userInfo[0] }));
+                        relation.getCurrentRelation(userInfo[0].userId)
+                            .then(relationInfo => {
+                                return res.send(utils.buildResData('登录成功', { code: 0, openId: openid, userInfo: userInfo[0], relationInfo: relationInfo[0] }));
+                            })
+                        
                     }
                 })
                 .catch(err => utils.sqlErr(err, res));
@@ -573,9 +577,9 @@ router.get('/plan', (req, res, next) => {
                                     element.planTime = `${utils.formatDate(element.planTime).date} ${utils.formatDate(element.planTime).time}`;
                                     return element;
                                 });
-                                res.send(utils.buildResData(`获取relationId=${relationId}&page=${page}的plan成功`, { code: 0, data: planInfo }));
+                                res.send(utils.buildResData(`获取relationId=${relationId}&page=${page}的plan成功`, { code: 0, planList: planInfo }));
                             } else {
-                                res.send(utils.buildResData(`没有记录`, { code: 0, date: planInfo }));
+                                res.send(utils.buildResData(`没有记录`, { code: 0, planList: planInfo }));
                             }
                         })
                         .catch(err => utils.sqlErr(err, res));
@@ -707,9 +711,9 @@ router.get('/anniversary', (req, res, next) => {
                                     element.anniversaryTime = `${utils.formatDate(element.anniversaryTime).date} ${utils.formatDate(element.anniversaryTime).time}`;
                                     return element;
                                 });
-                                res.send(utils.buildResData(`获取relationId=${relationId}的anniversary成功`, { code: 0, data: anniversaryInfo }));
+                                res.send(utils.buildResData(`获取relationId=${relationId}的anniversary成功`, { code: 0, anniversaryList: anniversaryInfo }));
                             } else {
-                                res.send(utils.buildResData(`没有记录`, { code: 0, data: anniversaryInfo }));
+                                res.send(utils.buildResData(`没有记录`, { code: 0, anniversaryList: anniversaryInfo }));
                             }
                         })
                         .catch(err => utils.sqlErr(err, res));

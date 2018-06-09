@@ -16,7 +16,7 @@ export function fetchAnniversaryList(relationId) {
             relationId
         }).then(function(res) {
             if(res.data.data.code === 0) {
-                return dispatch(updateAnniversaryList(res.data.data.data));
+                return dispatch(updateAnniversaryList(res.data.data.anniversaryList));
             }
             dispatch(updateAnniversaryList([]));
             return message.error('请先绑定情侣再使用此功能,否则将无法使用');
