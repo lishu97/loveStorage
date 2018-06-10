@@ -50,10 +50,10 @@ router.get('/wx/onlogin', (req, res, next) => {
             const openid = data.openid;
             user.getUserInfoByOpenId(openid)
                 .then(userInfo => {
-                    userInfo = utils.formatInfo(userInfo)
                     if (userInfo.length === 0) {
                         return res.send(utils.buildResData('请绑定username与openId', { code: 0, openId: openid, msg: 'bind' }));
                     } else {
+                        userInfo = utils.formatInfo(userInfo)
                         relation.getCurrentRelation(userInfo[0].userId)
                             .then(relationInfo => {
                                 return res.send(utils.buildResData('登录成功', { code: 0, openId: openid, userInfo: userInfo[0], relationInfo: relationInfo[0] }));
