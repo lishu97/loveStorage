@@ -6,6 +6,7 @@ var uuidv1 = require('uuid/v1');
 var multer = require('multer');
 var path = require('path');
 
+console.log( path.resolve('public', 'img'));
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, path.resolve('public', 'img'));
